@@ -9,7 +9,7 @@ class Channel():
         pass
 
     def _broadcast():
-        pass
+        pass 
 
     def _receive():
         pass
@@ -23,6 +23,6 @@ class User():
 class Server():
     users = []
     channels = []
-    
+
 
 if __name__ == '__main__':
