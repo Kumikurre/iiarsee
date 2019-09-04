@@ -1,0 +1,26 @@
+version: "3.7"
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+  
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'iiarsee'
+      MYSQL_USER: 'tshatti'
+      MYSQL_PASSWORD: 'tshattipassu'
+      MYSQL_ROOT_PASSWORD: 'ruuttipassu'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - mysli:/var/lib/mysql
+
+
+volumes:
+  mysli:
+  
