@@ -1,4 +1,3 @@
-from sqlalchemy import create_engine
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Table, Column, Integer, String, ForeignKey
@@ -42,8 +41,7 @@ class Address(Base):
     ip6_address = Column(String(64))
 
 
-if __name__ == '__main__':
-    engine = create_engine('mysql://tshatti:tshattipassu@127.0.0.1:3306')
+def initialize(engine):
     try:
         engine.execute("CREATE DATABASE iiarsee") #create db
     except Exception:

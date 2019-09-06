@@ -4,6 +4,10 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
+    depends_on:
+      - db
+    networks:
+      - docker
   
   db:
     image: mysql:5.7
@@ -19,8 +23,14 @@ services:
       - '3306'
     volumes:
       - mysli:/var/lib/mysql
+    networks:
+      - docker
 
 
 volumes:
   mysli:
   
+
+networks:
+  docker:
+    driver: 'bridge'

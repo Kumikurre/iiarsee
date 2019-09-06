@@ -1,6 +1,9 @@
 import socket
+import time
+
 from sqlalchemy import create_engine
 
+import database_init
 
 
 ####### THE PROPRIETARY TCP-INTERFACE FOR COMMUNICATION #######
@@ -31,12 +34,16 @@ class socketInterface():
 class Server():
     users = []
     channels = []
+    
+    def __init__(self):
+        print('Initializing database')
+        engine = create_engine('mysql://tshatti:tshattipassu@db:3306')
+        database_init.initialize(engine)
+
     def run(self):
-        while True:
-            pass
-
-
+        print('Server started')
+        
 if __name__ == '__main__':
-    engine = create_engine('mysql://tshatti:tshattipassu@localhost:3306')
+    print('Starting server...')
     server = Server()
     server.run()
