@@ -8,5 +8,9 @@ build:	## Build the package
 up:	## Start production deployment
 	docker-compose -f docker-compose.yml up
 
+down: ## Put the containers down
+	docker-compose down
+
 clean: ## WARNING! Deletes all volumes so you can start the DB from blank
+	make down
 	docker volume prune -f
