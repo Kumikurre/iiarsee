@@ -5,7 +5,7 @@ Distributed chat system with server-client architecture.
 install docker and docker-compose
 
 when you've installed everything
- > docker-compose up
+ > make build up
 
 
 ## Docs
