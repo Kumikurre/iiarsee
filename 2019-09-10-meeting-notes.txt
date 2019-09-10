@@ -1,0 +1,54 @@
+notes:
+Keep in mind, our goal is to pass the course. Not launch a product.
+
+handshake between server and client, how do we handle this?
+ - Protocol for communication
+ - TCP over IP. TLS? Grants extra points, if not too much work lets do it.
+ - 
+
+client:
+ - needs somekind of interface to use (cli, gui?)
+ - basic logic to connect to the server
+ - messages to and from channels
+ - client discovery and connection, messages
+ - clients keeps records of channels and their messages in <channel>.txt
+ - Could we benefit from using async.io?
+ - 
+
+server:
+ - Logic to channels, keeping records of users. 
+ - logic to broadcasting messages to users
+    - keeps record of where users are in channel messages
+
+
+ - Logic for client discovery
+    - enables clients to message between each other p2p, EXTRA POINTS, optional
+ - how does the server keep record of the messages?
+    - these shouldn't go into mysql
+    - 
+ - redis to act as message queue
+    - only place where the server needs to keep the messages
+    - queue of messages, own message for each users
+    - SCRATCH!
+ - The messages need to be kept in a DB, and we need to keep a record of the last message that a given user has received from the channel
+    - once they're online again, we deliver the new messages to the user
+    - Solution?
+ - Use async.io to make handling different jobs simulteniously easier
+ - secrets to authenticate clients, keep it simple, implement later but keep in mind
+ - 
+ - 
+
+protocol between client and server:
+    json over tcp connection.
+    - check if we could use http? what does the project description say?.. Probl better to do it low-level.
+ - simply json payload. something like:
+ {
+    command: 'join_channel',
+    channel: '<channel name>'
+ }
+ {
+     command: 'send_message',
+     channel: '<channel name>',
+     message: 'päivää'
+ }
+ we need simple commands to register nickname, join channel, send message etc.
