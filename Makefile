@@ -6,8 +6,11 @@ build:	## Build the package
 
 
 up:	## Start production deployment
-	docker-compose -f docker-compose.yml up
+	docker-compose -f docker-compose.yml up -d
 
+logs: ## start following logs for server application
+	docker logs -f iiarsee_server_1
+	
 down: ## Put the containers down
 	docker-compose down
 

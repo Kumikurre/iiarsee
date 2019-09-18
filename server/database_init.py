@@ -41,17 +41,17 @@ class Address(Base):
     ip6_address = Column(String(64))
 
 
-def initialize(engine):
+def initialize(engine, logger):
     try:
         engine.execute("CREATE DATABASE iiarsee") #create db
     except Exception:
-        print('Database most likely exists')
+        logger.info('Database most likely exists')
     engine.execute("USE iiarsee") # select new db
-    print('Creating tables...')
+    logger.info('Creating tables...')
     try:
         Base.metadata.create_all(engine)
     except Exception:
-        print('Fug, something went wrong :(')
+        logger.info('Fug, something went wrong :(')
     else:
-        print('Tables created')
+        logger.info('Tables created')
     
