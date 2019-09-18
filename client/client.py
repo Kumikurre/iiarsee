@@ -2,18 +2,55 @@ import argparse
 import json
 import logging
 import socket
-import click
+import prompt_toolkit
 
 clientId = "test_client"
 
-possible_actions = {"receive": receive, }
+possible_actions = {"receive": "receive" }
+
 
 def receive(self, parameter_list):
     raise NotImplementedError
 
 
+def main():
+    session = prompt_toolkit.PromptSession()
+
+    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    #     s.connect((args.address, args.port))
+    #     s.sendall("Hey monseaur server. Gimme things. I'm {}".format(clientId))
+        # switchcases for every possible action
+        # inside a while loop.
+
+        #send the first message connecting to server
+        # while (True):
+        #     #receive the response from server
+        #     #decode the data received
+        #     # based on the action given from server jump to that in the switchcases
+        #     if action == "receive stuff":
+        #         pass
+        #     elif action == "moar":
+        #         pass
+        #     else:
+        #         continue
+
+        # we need to a while loop for the client ui in which the user can send messages, change channels etc etc
+
+    while True:
+        try:
+            text = session.prompt('client> ')
+        except KeyboardInterrupt:
+            continue
+        except EOFError:
+            break
+        else:
+            # once the command is entered and no interuption, we enter here
+            print('You entered:', text)
+    print('Done.')
+
+
 logger = logging.getLogger("ds_messaging_client")
-logger.setLevel("info")
+logger.setLevel("INFO")
 
 parser = argparse.ArgumentParser("ds_messaging_client")
 parser.add_argument("--debug", help="Enable debugging")
@@ -32,25 +69,7 @@ if args.debug:
 
 
 if __name__ == '__main__':
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((args.address, args.port))
-        s.sendall("Hey monseaur server. Gimme things. I'm {}".format(clientId))
-        # switchcases for every possible action
-        # inside a while loop.
-
-        #send the first message connecting to server
-        while (True):
-            #receive the response from server
-            #decode the data received
-            # based on the action given from server jump to that in the switchcases
-            if action == "receive stuff":
-                pass
-            elif action == "moar":
-                pass
-            else:
-                continue
-
-        # we need to a while loop for the client ui in which the user can send messages, change channels etc etc
+    main()
 
 
 
