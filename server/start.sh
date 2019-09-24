@@ -2,13 +2,13 @@
 
 set -e
 
-echo "Initializing database"
+echo "start.sh - Initializing database"
 until python3 database_init.py 
 do
-  echo "Database not running or can not connect to it"
+  echo "start.sh - Database not running or can not connect to it. Retrying..."
   sleep 3
 done
 
 
-echo "Run server"
+echo "start.sh - Running the server"
 python3 server.py
