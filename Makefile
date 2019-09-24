@@ -2,7 +2,7 @@ help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 build:	## Build the package
-	docker-compose -f docker-compose.yml build --no-cache
+	docker-compose -f docker-compose.yml build
 
 
 up:	## Start production deployment
