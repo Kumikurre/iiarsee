@@ -28,11 +28,11 @@ class Server():
     def __init__(self, logger, config):
         self.logger = logger
         self.config = config
-        self.logger.info('Initializing database')
+        # self.logger.info('Initializing database')
         # TODO move these credentials to the config file
         self.engine = create_engine('mysql://tshatti:tshattipassu@db:3306')
-        database_init.initialize(self.engine, logger)
-        self.logger.info('Database initialized')
+        # database_init.initialize(self.engine, logger)
+        # self.logger.info('Database initialized')
         # DBiface = database_methods(self.engine)
 
     """

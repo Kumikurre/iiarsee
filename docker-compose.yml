@@ -9,6 +9,8 @@ services:
     networks:
       - docker
     restart: always
+    command:
+      - "./start.sh"
 
   db:
     image: mysql:5.7

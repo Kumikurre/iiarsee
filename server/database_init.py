@@ -1,6 +1,7 @@
+import logging
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Table, Column, Integer, String, ForeignKey
+from sqlalchemy import Table, Column, Integer, String, ForeignKey, create_engine
 from sqlalchemy.orm import relationship
 
 ####### BASIC SQLALCHEMY OBJECT-RELATIONAL-MAPPINGS #######
@@ -55,3 +56,16 @@ def initialize(engine, logger):
     else:
         logger.info('Tables created')
     
+
+if __name__ == '__main__':
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    
+    engine = create_engine('mysql://tshatti:tshattipassu@db:3306')
+    
+    initialize(engine, logger)
