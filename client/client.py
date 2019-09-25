@@ -1,3 +1,4 @@
+import asyncio
 import argparse
 import json
 import logging
@@ -15,10 +16,15 @@ def receive(self, parameter_list):
 
 def main():
     session = prompt_toolkit.PromptSession()
+    
 
-    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    #     s.connect((args.address, args.port))
-    #     s.sendall("Hey monseaur server. Gimme things. I'm {}".format(clientId))
+    
+        # while True:
+        #     (b"Hey monseaur server. Gimme things. I'm client")
+        #     data = s.recv(1024)
+        #     if not data:
+        #         break
+        #     print(str(data))
         # switchcases for every possible action
         # inside a while loop.
 
@@ -35,17 +41,36 @@ def main():
         #         continue
 
         # we need to a while loop for the client ui in which the user can send messages, change channels etc etc
+    
 
+        # s.sendall(b"skjfpsjfpokasjpfSPGKPOSKGPODJGPOJ")
+        # while True:
+        #     test=s.recv(1024)
+        #     if not test:
+        #         continue
+        #     print("fuck")
+        #     print(test)
+        # print(test)
     while True:
-        try:
-            text = session.prompt('client> ')
-        except KeyboardInterrupt:
-            continue
-        except EOFError:
-            break
-        else:
-            # once the command is entered and no interuption, we enter here
-            print('You entered:', text)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((args.address, args.port))
+
+            try:
+                text = session.prompt('client> ')
+            except KeyboardInterrupt:
+                continue
+            except EOFError:
+                break
+            else:
+                # once the command is entered and no interuption, we enter here
+                print('You entered:', text)
+                print("sending...")
+                s.sendall(text.encode())
+                data = s.recv(1024)
+                if not data:
+                    break
+                print(data.decode())
+                s.close()
     print('Done.')
 
 
