@@ -92,7 +92,7 @@ if __name__ == '__main__':
     config = {
         "PORT": 8666,
         "BUFFER_SIZE": 1024,
-        "HOSTNAME": '127.0.0.1'
+        "HOSTNAME": '0.0.0.0'
     }
     
     # Start the actual server

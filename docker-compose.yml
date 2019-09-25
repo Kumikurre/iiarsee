@@ -8,6 +8,8 @@ services:
       - db
     networks:
       - docker
+    ports:
+      - '8666:8666'
     restart: always
     command:
       - "./start.sh"
