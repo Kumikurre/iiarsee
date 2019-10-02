@@ -69,7 +69,7 @@ def main():
                 data = s.recv(1024)
                 if not data:
                     break
-                print(data.decode())
+                print("Received back:", data.decode())
                 s.close()
     print('Done.')
 
@@ -83,14 +83,16 @@ parser.add_argument("--address", help="IP addrss for the server")
 parser.add_argument("--port", help="Which port to connect to", type=int)
 
 args = parser.parse_args()
-if not args.address or not args.port:
-    raise Exception('Missing critical input')
+# default to local host if no arguments given
+if not args.address:
+    args.address = '127.0.0.1'
+if not args.port:
+    args.port = 8666
 if args.debug:
     logger.setLevel("debug")
 
 # the client also needs to have a "server" at all times listening to other clients possibly wanting to connect to them.
 # so we should have some sort of background listener running that interupts (? or what ever you call it) incase someone connects to it
-# 
 
 
 if __name__ == '__main__':
