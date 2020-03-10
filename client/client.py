@@ -1,15 +1,74 @@
-import asyncio
+# import asyncio
 import argparse
 import json
 import logging
 import socket
 import prompt_toolkit
+import sys
+
+#### CONSTANTS:
+client_start_message = "Welcome to iiarsee, the ultimate communication tool."
+client_main_menu = \
+    "What do you want to do? \n" \
+    "(r)ead messages from channel\n" \
+    "send message to (c)hannel\n" \
+    "send message to (u)ser\n" \
+    "(j)oin channel\n" \
+    "(l)eave a channel\n" \
+    "(q)uit"
+
+possible_operations_to_server: {
+    "register_client": "register_client",
+    "message_channel": "message_channel",
+    "join_channel": "join_channel",
+    "leave_channel": "leave_channel",
+    "find_client": "find_client",
+    "quit_client": "quit_client"
+}
+
+# when client starts it registers to the server
+# even when client is inactive, idling, it will still send a heartbeat to the server
+# when the client quits it will send a "quitting" message to the server
+
+# should all the channels the client is in be in a dict with a list of messages
+# a message could be like "<username>: <message>"
 
 
 # should we have a separate worker for p2p messaging to act as a server to the other client, which would take care of the message
 # receiving and notification of the actual client
 
-class ClientSession:
+class ClientSession():
+    def __init__(self):
+        self.channels = {}
+        self.privates = {}
+        self.clients = {}
+
+    def register_client(self, client_name):
+        """A method for registering the client to the server"""
+        pass
+
+    def read_messages(self):
+        pass
+
+    def message_channel(self, client_name, client_ip):
+        pass
+
+    def message_client(self, client_name):
+        self._find_client_address()
+        pass
+
+    def join_channel(self, client_name, client_ip, channel_name):
+        pass
+
+    def leave_channel(self, client_name, channel_name):
+        pass
+
+    def quit_client(self, client_name, channel_name, message):
+        pass
+
+    def _find_client_address(self, client_name, client_ip):
+        pass
+
     # have internal state of the session here
     # e.g. the channel in which the client is, do we want to have client actively in one channel?
     # or should we just have the state of each channel displayed to the client at all times with no "active" channel
@@ -26,17 +85,9 @@ def receive(self, parameter_list):
 
 
 def main():
+    channels = {}
+    privates = {}
     session = prompt_toolkit.PromptSession()
-    # do the login right away here (we don't support offline mode :P)
-    # can we pass a socket to another process?
-    # or should we first create the server process here and interact with it for the login, then
-    # move it to the background and start another process for the actual interactive client
-
-    # TODO Learn how to run separate processes with the asyncio
-    # TODO How to handle the communication/notification between the server process and the client process
-    # TODO Can we separate a common logic for the messages between client and server
-    # TODO Implement actual message/-logic class with actions and re-actions
-    # TODO Implement the command-line-interface for the client
     while True:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((args.address, args.port))
@@ -52,10 +103,8 @@ def main():
             except EOFError:
                 break
             else:
-                # here comes there  logic for a given command
-                # do we use a switch case like logic? Have all the possible commands in a dict/function with handles for the corresponding functions as values
-                # 
-                # once the command is entered and no interuption, we enter here
+                ### If else block which checks for each possible command and calls the corresponding methods
+                
                 print('You entered:', text)
                 print("sending...")
                 s.sendall(text.encode())
