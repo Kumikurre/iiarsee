@@ -6,52 +6,84 @@ import sys
 
 import asyncio
 
+op_codes = {
+    "find_client": "find_client",
+    "register_client": "register_client",
+    "remove_client": "remove_client",
+    "join_channel": "join_channel",
+    "leave_channel": "leave_channel",
+    "message_channel": "message_channel"
+}
+
 
 ####### THE PROPRIETARY TCP-INTERFACE FOR COMMUNICATION #######
-class socketInterface():
-    def __init__(self):
-        pass
+class DataHandler():
+    clients = {}
+    channels = {}
 
-    def listen(self):
-        pass
+    def __init__(self, logger):
+        self.logger = logger
 
     def client_register(self, client_name, client_ip):
+        self.logger.info(f'Registering client {client_name}@{client_ip}')
         pass
 
     def client_remove(self, client_name):
+        self.logger.info(f'Removing client {client_name}@{client_ip}')
         pass
 
-    def find_client(self, client_name, client_ip):
+    def find_client(self, search_name):
+        self.logger.info(f'Finding client {search_name}')
         pass
 
     def join_channel(self, client_name, client_ip, channel_name):
+        self.logger.info(f'Client {client_name}@{client_ip} joining: {channel_namme}')
         pass
 
     def leave_channel(self, client_name, channel_name):
+        self.logger.info(f'Client {client_name}@{client_ip} leaving: {channel_namme}')
         pass
 
-    def broadcast_channel(self, client_name, channel_name, message):
+    def message_channel(self, client_name, channel_name, message):
+        self.logger.info(f'{client_name}@{client_ip}:{channel_namme}: {message}')
         pass
 
 
 ####### THIS IS THE ACTUAL SERVER CLASS #######
 class Server():
 
-    clients = {}
-    channels = {}
-
     def __init__(self, logger, config):
         self.logger = logger
         self.config = config
+        self.dataOperations = DataHandler(self.logger)
     
     def run(self):
         # https://asyncio.readthedocs.io/en/latest/tcp_echo.html
 
-        async def handle_echo(reader, writer):
+        async def handle_socketdata(reader, writer):
             data = await reader.read(100)
             message = data.decode()
             addr = writer.get_extra_info('peername')
-            self.logger.info(f'Received {message} from {addr}')
+            print(f'Received {message} from {addr}')
+
+            if operation == op_codes["register_client"]:
+                DataHandler.client_register(self, "client_name", "client_ip")
+                pass
+            if operation == op_codes["remove_client"]:
+                DataHandler.client_remove(self, "client_name")
+                pass
+            if operation == op_codes["find_client"]:
+                DataHandler.find_client(self, "search_name")
+                pass
+            if operation == op_codes["join_channel"]:
+                DataHandler.join_channel(self, "client_name", "client_ip", "channel_name")
+                pass
+            if operation == op_codes["leave_channel"]:
+                DataHandler.join_channel(self, "client_name", "channel_name")
+                pass
+            if operation == op_codes["message_channel"]:
+                pass
+
 
             self.logger.info(f'Send: {message}')
             writer.write(data)
@@ -61,11 +93,11 @@ class Server():
             writer.close()
 
         loop = asyncio.get_event_loop()
-        coroutine = asyncio.start_server(handle_echo, self.config['HOSTNAME'], self.config['PORT'], loop=loop)
+        coroutine = asyncio.start_server(handle_socketdata, self.config['HOSTNAME'], self.config['PORT'], loop=loop)
         server = loop.run_until_complete(coroutine)
 
         # Serve requests until Ctrl+C is pressed
-        self.logger.info(f'Serving on {server.sockets[0].getsockname()}')
+        self.logger.info(f'Serving on: {server.sockets[0].getsockname()}')
         try:
             loop.run_forever()
         except KeyboardInterrupt:
