@@ -6,9 +6,6 @@ import sys
 
 import asyncio
 
-import database_init
-import database_methods 
-
 
 ####### THE PROPRIETARY TCP-INTERFACE FOR COMMUNICATION #######
 class socketInterface():
