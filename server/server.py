@@ -4,7 +4,6 @@ import logging
 import socket
 import sys
 
-from sqlalchemy import create_engine
 import asyncio
 
 import database_init
@@ -19,30 +18,34 @@ class socketInterface():
     def listen(self):
         pass
 
-    def send_channel(self):
+    def client_register(self, client_name, client_ip):
         pass
+
+    def client_remove(self, client_name):
+        pass
+
+    def find_client(self, client_name, client_ip):
+        pass
+
+    def join_channel(self, client_name, client_ip, channel_name):
+        pass
+
+    def leave_channel(self, client_name, channel_name):
+        pass
+
+    def broadcast_channel(self, client_name, channel_name, message):
+        pass
+
 
 ####### THIS IS THE ACTUAL SERVER CLASS #######
 class Server():
 
+    clients = {}
+    channels = {}
+
     def __init__(self, logger, config):
         self.logger = logger
         self.config = config
-        # TODO move these credentials to the config file
-        self.engine = create_engine('mysql://tshatti:tshattipassu@db:3306')
-
-    """
-    def run(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind((self.config['HOSTNAME'], self.config['PORT']))
-        self.socket.listen(1)
-        self.logger.info('Server started')
-        totaltime = 0
-        while True:
-            time.sleep(5)
-            totaltime += 5
-            self.logger.info(f'waited total of {totaltime} seconds')
-    """
     
     def run(self):
         # https://asyncio.readthedocs.io/en/latest/tcp_echo.html
