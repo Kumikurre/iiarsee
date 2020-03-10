@@ -1,31 +1,11 @@
-# The client logs in once in the beginning of the session (connection) and after that the server trusts the client for the life of that session (connection).
-
-# During registration, if the username is taken etc. respond something to promt retry
-
-# WAIT WHAT!? If we want to have authentication for peer-to-peer messages, we need to implement a system where the connecting user sends
-# also a hash of its secret to the other user that the user 2 then verifies from the server and then they either
-# 1. exchange a secret between each other and use that in the future to authenticate between each other
-# 2. Blindly trust that connection for the duration of that session (connection) and redo the auth to server every time
-
 commands = {
-    "register": {
+    "register_client": {
         "parameters": {
-            "userId": "iWantThis!",
-            "password": "notYourPassword"
+            "client_name": "client1"
         },
         "possible_responses": {
-            "failed": "causes retry logic, username was in use or what ever",
-            "success": "we good to go."
-        }
-    },
-    "login": {
-        "parameters": {
-            "userId": "randomUser",
-            "password": "salasana1"
-        },
-        "possible_responses": {
-            "failed": "something went wrong :P",
-            "success": "welcome"
+            "success": "you gots the name",
+            "error": "name already in use"
         }
     },
     "send_message": {
@@ -39,35 +19,39 @@ commands = {
             "channel_name": "batcave"
         },
         "possible_responses": {
-            "failed": "channel doesn't exist",
-            "success": "go!"
+            "success": "go!"  # if the channel doesn't exist we create it
         }
     },
-    "list_channels": {
-        "response": "#list of channels"
-    },
     "leave_channel": {
-
+        "parameters": {
+            "channel_name": "batcave"
+        },
+        "possible_responses": {
+            "success": "byebye",
+            "error": "you not in such channel fool"
+        }
     },
     "discover_user": {
         "parameters": {
             "userId": "string"
         },
         "possible_responses": {
-            "failed": "user doesn't exist",
+            "error": "404",
             "success": "info of the user"
         }
     },
     "message_user": {
         "parameters": {
-            "userId": "username of the sender, if we don't do auth, can be spoofed, but who cares.",
+            "client_name": "name of the client to send the message to",
             "message": "bonjour"
+        }
+    },
+    "quit_message": {
+        "parameters": {
+            "client_name": "client2"
         }
     }
 }
-# in the logic for message_user we need to take of user discovery if that hasn't been done before
-# if we want to have authentication between users, we need another command to authenticate_user: {params: {"hash": <hash>}}
-
 
 message = {
     "command": "<command for the recipient to know what this is about, switch case?>",
