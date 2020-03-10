@@ -19,7 +19,7 @@ commands = {
             "channel_name": "batcave"
         },
         "possible_responses": {
-            "success": "go!"  # if the channel doesn't exist we create it
+            "success": "OK"  # if the channel doesn't exist we create it
         }
     },
     "leave_channel": {
@@ -62,6 +62,11 @@ message = {
         "channel_name": "exampleChannel",
         "message": "If you e.g. have command send_message"
     }
+}
+
+response = {
+    "status": "OK/NOK",
+    "optional_parameter": "e.g. client_address"
 }
 
 # sending the actual message over the socket, we just json.strigify(message) and send_all() over the socket.

@@ -39,18 +39,32 @@ possible_operations_to_server: {
 
 class ClientSession():
     def __init__(self):
+        self.client_name = None
         self.channels = {}
-        self.privates = {}
+        # channels = {
+        #   "channel1": [{timestamp: <timestamp>, client_name: <client_name>, message: <informative message>"}],
+        #   "channel2": []
+        # }
+        # 
         self.clients = {}
+        # clients {
+        #   "client1": {
+        #       "address": "127.0.0.1",
+        #       "messages": [],
+        #       "state": "INACTIVE"
+        #   }
+        # }
 
     def register_client(self, client_name):
         """A method for registering the client to the server"""
+        # this method sets the self.client_name
         pass
 
-    def read_messages(self):
+    def read_messages(self, channel_name, rows=5):
+        """Prints n last messages for given channel"""
         pass
 
-    def message_channel(self, client_name, client_ip):
+    def message_channel(self, channel_name, message):
         pass
 
     def message_client(self, client_name):
@@ -65,9 +79,16 @@ class ClientSession():
 
     def quit_client(self, client_name, channel_name, message):
         pass
+        # send also quit message to whole client_address_book -> client removed from client_address_book
 
     def _find_client_address(self, client_name, client_ip):
         pass
+        # clients send quit message also to other clients  they're in contact with
+        # clients keep a client_address_book in which they also keep the state of other clients
+        # if client_name in clients and clients[client_name].state == "ACTIVE": suoraan clientille jutteleen
+        # muuten käydään serverillä
+
+
 
     # have internal state of the session here
     # e.g. the channel in which the client is, do we want to have client actively in one channel?
