@@ -1,4 +1,4 @@
-# import asyncio
+import asyncio
 import argparse
 import json
 import logging
@@ -7,7 +7,8 @@ import prompt_toolkit
 import sys
 
 #### CONSTANTS:
-client_start_message = "Welcome to iiarsee, the ultimate communication tool."
+username = prompt_toolkit.prompt("Register as: ")
+client_start_message = f"Welcome to iiarsee {username}. Press [Ctrl-Q] to quit."
 client_main_menu = \
     "What do you want to do? \n" \
     "(r)ead messages from channel\n" \
@@ -32,7 +33,6 @@ possible_operations_to_server: {
 
 # should all the channels the client is in be in a dict with a list of messages
 # a message could be like "<username>: <message>"
-
 
 # should we have a separate worker for p2p messaging to act as a server to the other client, which would take care of the message
 # receiving and notification of the actual client
@@ -104,38 +104,129 @@ class ClientSession():
 def receive(self, parameter_list):
     raise NotImplementedError
 
+# Takes the user input from input_field and begins operations based on it
+# TODO: parse user input to <operation> [<kelle/mille kanavalle> <teksti>]
+#    esim. /register latsis
+#          /q
+#          /msg sakkoja mitäpä ukko mee töihin
+def accept_input(buff):
+    """Handler for accepting user input"""
+    new_text = chat_field.text + "\n" + input_field.text
+    chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
+
+    user_input = input_field.text.split()
+    try:
+        operation = str(user_input[0])
+        recipient = str(user_input[1])
+        message = " ".join(map(str, user_input[2:]))
+
+        if operation == "/register":
+            #register_client()
+            pass
+        if operation== "/read_msg":
+            #read_messages()
+            pass
+        elif operation == "/channel":
+            #message_channel()
+            pass
+        elif operation == "/msg":
+            #message_client()
+            #tää kauhee sekasotku pois heti kun funkkarit toimii
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect(("127.0.0.1", 8666))
+                s.sendall(str.encode(f"{username}: " + message))
+                data = s.recv(1024)
+                new_text = chat_field.text + "\n" + data.decode()
+                chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
+        elif operation == "/join":
+            #join_channel()
+            pass
+        elif operation == "/leave":
+            #leave_channel()
+            pass
+        elif operation == "/quit":
+            #quit_client()
+            pass
+
+    except IndexError:
+        pass
+
+# Create the layout
+chat_field = prompt_toolkit.widgets.TextArea()
+input_field = prompt_toolkit.widgets.TextArea(
+        height=1,
+        prompt=">>> ",
+        style="class:input-field",
+        multiline=False,
+        wrap_lines=False,
+        accept_handler=accept_input,
+    )
+
+root_container = prompt_toolkit.layout.containers.HSplit([
+    prompt_toolkit.layout.containers.Window(
+        height=2, 
+        content=prompt_toolkit.layout.controls.FormattedTextControl(client_start_message), 
+        align=prompt_toolkit.layout.containers.WindowAlign.CENTER), 
+    prompt_toolkit.layout.containers.HSplit([
+        chat_field, 
+        input_field], 
+        padding=1, 
+        padding_char='_'),
+    ], 
+    padding=1, 
+    padding_char='_')
+
+input_field.accept_handler = accept_input
+
+# Add keybinds to make user's life easier
+# Ctrl+C and Ctrl+Q: exit application
+kb = prompt_toolkit.key_binding.KeyBindings()
+@kb.add('c-c', eager=True)
+@kb.add('c-q', eager=True)
+def _(event):
+    """Pressing Ctrl-Q or Ctrl-C will exit the user interface."""
+    event.app.exit()
+
+# Create an 'Application' instance
+application = prompt_toolkit.application.Application(
+    layout=prompt_toolkit.layout.layout.Layout(root_container, focused_element=input_field),
+    key_bindings=kb,
+    mouse_support=True,
+    full_screen=True)
+
 
 def main():
     channels = {}
     privates = {}
-    session = prompt_toolkit.PromptSession()
-    while True:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((args.address, args.port))
+    application.run()
+    # session = prompt_toolkit.PromptSession()
+    # while True:
+    #     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    #         s.connect((args.address, args.port))
 
-            try:
-                # here we handle the client giving us a command
-                # interactive shell code here?
-                # have logic to only allow the given commands and retry if not in the possible commands
-                # 
-                text = session.prompt('client> ')
-            except KeyboardInterrupt:
-                continue
-            except EOFError:
-                break
-            else:
-                ### If else block which checks for each possible command and calls the corresponding methods
+    #         try:
+    #             # here we handle the client giving us a command
+    #             # interactive shell code here?
+    #             # have logic to only allow the given commands and retry if not in the possible commands
+    #             # 
+    #             text = session.prompt('client> ')
+    #         except KeyboardInterrupt:
+    #             continue
+    #         except EOFError:
+    #             break
+    #         else:
+    #             ### If else block which checks for each possible command and calls the corresponding methods
                 
-                print('You entered:', text)
-                print("sending...")
-                s.sendall(text.encode())
-                data = s.recv(1024)
-                if not data:
-                    break
-                # here comes the logic after receiving an answer from the server.
-                # another dict/function/class with functions/methods for possible responses?
-                print("Received back:", data.decode())
-                s.close()
+    #             print('You entered:', text)
+    #             print("sending...")
+    #             s.sendall(text.encode())
+    #             data = s.recv(1024)
+    #             if not data:
+    #                 break
+    #             # here comes the logic after receiving an answer from the server.
+    #             # another dict/function/class with functions/methods for possible responses?
+    #             print("Received back:", data.decode())
+    #             s.close()
     print('Done.')
 
 
@@ -159,10 +250,8 @@ if args.debug:
 # the client also needs to have a "server" at all times listening to other clients possibly wanting to connect to them.
 # so we should have some sort of background listener running that interupts (? or what ever you call it) incase someone connects to it
 
-
 if __name__ == '__main__':
     main()
-
 
 # NOTE: https://opensource.com/article/17/5/4-practical-python-libraries
 # NOTE: https://codeburst.io/building-beautiful-command-line-interfaces-with-python-26c7e1bb54df
