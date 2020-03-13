@@ -16,7 +16,7 @@ op_codes = {
 }
 
 
-####### THE PROPRIETARY TCP-INTERFACE FOR COMMUNICATION #######
+####### Handler for internal data structure #######
 class DataHandler():
     clients = {}
     channels = {}
@@ -49,7 +49,7 @@ class DataHandler():
         pass
 
 
-####### THIS IS THE ACTUAL SERVER CLASS #######
+####### Actual server class that handles communication #######
 class Server():
 
     def __init__(self, logger, config):
@@ -66,23 +66,55 @@ class Server():
             addr = writer.get_extra_info('peername')
             print(f'Received {message} from {addr}')
 
+            answer = {
+                'status': 0
+            }
+
             if operation == op_codes["register_client"]:
-                DataHandler.client_register(self, "client_name", "client_ip")
+                try:
+                    DataHandler.client_register(self, "client_name", "client_ip")
+                except Exception as e:
+                    answer['status'] = 1
+                    answer['statusmessage'] = e
                 pass
             if operation == op_codes["remove_client"]:
-                DataHandler.client_remove(self, "client_name")
+                try:
+                    DataHandler.client_remove(self, "client_name")
+                except Exception as e:
+                    answer['status'] = 1
+                    answer['statusmessage'] = e
                 pass
             if operation == op_codes["find_client"]:
-                DataHandler.find_client(self, "search_name")
+                try:
+                    ip_address = DataHandler.find_client(self, "search_name")
+                    answer['address'] = ip_address
+                except Exception as e:
+                    answer['status'] = 1
+                    answer['statusmessage'] = e
                 pass
             if operation == op_codes["join_channel"]:
-                DataHandler.join_channel(self, "client_name", "client_ip", "channel_name")
+                try:
+                    DataHandler.join_channel(self, "client_name", "client_ip", "channel_name")
+                except Exception as e:
+                    answer['status'] = 1
+                    answer['statusmessage'] = e
                 pass
             if operation == op_codes["leave_channel"]:
-                DataHandler.join_channel(self, "client_name", "channel_name")
+                try:
+                    DataHandler.join_channel(self, "client_name", "channel_name")
+                except Exception as e:
+                    answer['status'] = 1
+                    answer['statusmessage'] = e
                 pass
             if operation == op_codes["message_channel"]:
-                pass
+                try:
+                    pass
+                except Exception as e:
+                    answer['status'] = 1
+                    answer['statusmessage'] = e
+            else:
+                    answer['status'] = 1
+                    answer['statusmessage'] = "unkown operation"
 
 
             self.logger.info(f'Send: {message}')
