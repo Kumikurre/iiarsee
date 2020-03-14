@@ -65,23 +65,37 @@ class ClientSession():
         pass
 
     def message_channel(self, channel_name, message):
+        """Sends a message to a given channel on the server"""
         pass
 
     def message_client(self, client_name):
-        self._find_client_address()
+        """Sends a message to a given client"""
+        client_address = self._find_client_address()
+        pass
+
+    def receive_message_server(self):
+        """Handle receiving of message from server"""
+        pass
+
+    def receive_message_client(self):
+        """Handle receiving of message from server"""
         pass
 
     def join_channel(self, client_name, client_ip, channel_name):
+        """Joins a given channel on the server"""
         pass
 
     def leave_channel(self, client_name, channel_name):
+        """Leaves a given channel on the server"""
         pass
 
     def quit_client(self, client_name, channel_name, message):
+        """Sends a "CLIENT_QUITTING" message to the server and other clients in the clients object"""
         pass
         # send also quit message to whole client_address_book -> client removed from client_address_book
 
     def _find_client_address(self, client_name, client_ip):
+        """Find a given client's true network address from the server"""
         pass
         # clients send quit message also to other clients  they're in contact with
         # clients keep a client_address_book in which they also keep the state of other clients
@@ -230,29 +244,41 @@ def main():
     print('Done.')
 
 
-logger = logging.getLogger("ds_messaging_client")
-logger.setLevel("INFO")
-
-parser = argparse.ArgumentParser("ds_messaging_client")
-parser.add_argument("--debug", help="Enable debugging")
-parser.add_argument("--address", help="IP addrss for the server")
-parser.add_argument("--port", help="Which port to connect to", type=int)
-
-args = parser.parse_args()
-# default to local host if no arguments given
-if not args.address:
-    args.address = '127.0.0.1'
-if not args.port:
-    args.port = 8666
-if args.debug:
-    logger.setLevel("debug")
-
-# the client also needs to have a "server" at all times listening to other clients possibly wanting to connect to them.
-# so we should have some sort of background listener running that interupts (? or what ever you call it) incase someone connects to it
-
 if __name__ == '__main__':
-    main()
+    logger = logging.getLogger("iiarsee_client")
+    logger.setLevel("INFO")
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler('iiarsee_client.log')
+    fh.setLevel(logging.DEBUG)
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    # add the handlers to the logger
+    logger.addHandler(fh)
+    logger.addHandler(ch)
 
-# NOTE: https://opensource.com/article/17/5/4-practical-python-libraries
-# NOTE: https://codeburst.io/building-beautiful-command-line-interfaces-with-python-26c7e1bb54df
-# NOTE: https://realpython.com/python-sockets/
+    logger.info("__main__: starting the client")
+
+    parser = argparse.ArgumentParser("iiarsee_client")
+    parser.add_argument("--debug", help="Enable debugging")
+    parser.add_argument("--address", help="IP addrss for the server")
+    parser.add_argument("--port", help="Which port to connect to", type=int)
+
+    args = parser.parse_args()
+    # default to local host if no arguments given
+    if not args.address:
+        args.address = '127.0.0.1'
+    if not args.port:
+        args.port = 8666
+    if args.debug:
+        logger.setLevel("debug")
+
+    logger.debug("__main__: set client arguments: %s", args)
+    # the client also needs to have a "server" at all times listening to other clients possibly wanting to connect to them.
+    # so we should have some sort of background listener running that interupts (? or what ever you call it) incase someone connects to it
+
+    main(logger, args)
