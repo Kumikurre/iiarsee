@@ -44,10 +44,17 @@ class DataHandler():
 
     def join_channel(self, client_name, client_ip, channel_name):
         self.logger.info(f'Client {client_name}@{client_ip} joining: {channel_namme}')
+        try:
+            # This sets the key 'channel_name' as '{}' if it does not exist and returns it otherwise
+            self.channels.setdefault(channel_name, {})
+            # set a name:address pair in the channel object
+            self.channels[channel_name][client_name] = client_ip
         pass
 
     def leave_channel(self, client_name, channel_name):
         self.logger.info(f'Client {client_name}@{client_ip} leaving: {channel_namme}')
+        try:
+            del self.channels[channel_name][client_name]
         pass
 
     def message_channel(self, client_name, channel_name, message):
