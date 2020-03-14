@@ -29,12 +29,14 @@ class DataHandler():
         # TODO should first call find_client() if a client already exists and then return an error message
         try:
             self.clients[client_name] = {"address": client_ip}
+            return
         pass
 
     def client_remove(self, client_name):
         self.logger.info(f'Removing client {client_name}@{client_ip}')
         try:
             del self.clients[client_name]
+            return
         pass
 
     def find_client(self, search_name):
@@ -49,13 +51,22 @@ class DataHandler():
             self.channels.setdefault(channel_name, {})
             # set a name:address pair in the channel object
             self.channels[channel_name][client_name] = client_ip
+            return
         pass
 
     def leave_channel(self, client_name, channel_name):
         self.logger.info(f'Client {client_name}@{client_ip} leaving: {channel_namme}')
         try:
             del self.channels[channel_name][client_name]
+            return
         pass
+
+    def find_channel_participants(self, channel_name):
+        self.logger.info(f'Finding participants for channel {channel_name}')
+        try:
+            return self.channels[channel_name]
+        pass
+
 
     def message_channel(self, client_name, channel_name, message):
         self.logger.info(f'{client_name}@{client_ip}:{channel_namme}: {message}')
