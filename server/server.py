@@ -18,23 +18,29 @@ op_codes = {
 
 ####### Handler for internal data structure #######
 class DataHandler():
-    clients = {}
-    channels = {}
 
     def __init__(self, logger):
         self.logger = logger
+        self.clients = {}
+        self.channels = {}
 
     def client_register(self, client_name, client_ip):
         self.logger.info(f'Registering client {client_name}@{client_ip}')
+        # TODO should first call find_client() if a client already exists and then return an error message
+        try:
+            self.clients[client_name] = {"address": client_ip}
         pass
 
     def client_remove(self, client_name):
         self.logger.info(f'Removing client {client_name}@{client_ip}')
+        try:
+            del self.clients[client_name]
         pass
 
     def find_client(self, search_name):
         self.logger.info(f'Finding client {search_name}')
-        pass
+        try:
+            return self.clients[search_name]
 
     def join_channel(self, client_name, client_ip, channel_name):
         self.logger.info(f'Client {client_name}@{client_ip} joining: {channel_namme}')
