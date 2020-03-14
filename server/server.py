@@ -68,10 +68,6 @@ class DataHandler():
         pass
 
 
-    def message_channel(self, client_name, channel_name, message):
-        self.logger.info(f'{client_name}@{client_ip}:{channel_namme}: {message}')
-        pass
-
 
 ####### Actual server class that handles communication #######
 class Server():
@@ -132,13 +128,14 @@ class Server():
                 pass
             if operation == op_codes["message_channel"]:
                 try:
+                    recipients = DataHandler.find_channel_participants(self, "channel_name")
                     pass
                 except Exception as e:
                     answer['status'] = 1
                     answer['statusmessage'] = e
             else:
-                    answer['status'] = 1
-                    answer['statusmessage'] = "unkown operation"
+                answer['status'] = 1
+                answer['statusmessage'] = "unkown operation"
 
 
             self.logger.info(f'Send: {message}')
