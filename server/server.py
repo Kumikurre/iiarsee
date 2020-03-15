@@ -76,7 +76,7 @@ class Server():
         self.logger = logger
         self.config = config
         self.dataOperations = DataHandler(self.logger)
-    
+
     def run(self):
         # https://asyncio.readthedocs.io/en/latest/tcp_echo.html
 
@@ -92,21 +92,21 @@ class Server():
 
             if operation == op_codes["register_client"]:
                 try:
-                    DataHandler.client_register(self, "client_name", "client_ip")
+                    self.dataOperations.client_register(self, "client_name", "client_ip")
                 except Exception as e:
                     answer['status'] = 1
                     answer['statusmessage'] = e
                 pass
             if operation == op_codes["remove_client"]:
                 try:
-                    DataHandler.client_remove(self, "client_name")
+                    self.dataOperations.client_remove(self, "client_name")
                 except Exception as e:
                     answer['status'] = 1
                     answer['statusmessage'] = e
                 pass
             if operation == op_codes["find_client"]:
                 try:
-                    ip_address = DataHandler.find_client(self, "search_name")
+                    ip_address = self.dataOperations.find_client(self, "search_name")
                     answer['address'] = ip_address
                 except Exception as e:
                     answer['status'] = 1
@@ -114,21 +114,21 @@ class Server():
                 pass
             if operation == op_codes["join_channel"]:
                 try:
-                    DataHandler.join_channel(self, "client_name", "client_ip", "channel_name")
+                    self.dataOperations.join_channel(self, "client_name", "client_ip", "channel_name")
                 except Exception as e:
                     answer['status'] = 1
                     answer['statusmessage'] = e
                 pass
             if operation == op_codes["leave_channel"]:
                 try:
-                    DataHandler.join_channel(self, "client_name", "channel_name")
+                    self.dataOperations.join_channel(self, "client_name", "channel_name")
                 except Exception as e:
                     answer['status'] = 1
                     answer['statusmessage'] = e
                 pass
             if operation == op_codes["message_channel"]:
                 try:
-                    recipients = DataHandler.find_channel_participants(self, "channel_name")
+                    recipients = self.dataOperations.find_channel_participants(self, "channel_name")
                     pass
                 except Exception as e:
                     answer['status'] = 1
