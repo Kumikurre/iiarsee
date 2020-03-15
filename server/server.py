@@ -3,6 +3,7 @@ import time
 import logging
 import socket
 import sys
+import json
 
 import asyncio
 
@@ -160,20 +161,24 @@ class Server():
         # https://asyncio.readthedocs.io/en/latest/tcp_echo.html
 
         async def handle_socketdata(reader, writer):
-            data = await reader.read(100)
+            data = await reader.read(256)
             message = data.decode()
             addr = writer.get_extra_info('peername')
             print(f'Received {message} from {addr}')
 
-            # TODO parse the received JSON
+            try:
+                parsed_data = json.loads(message)
+            except:
+                parsed_data = None
+                self.logger.info(f'JSON parsing failed for received message')
 
+            if parsed_data:
+                # Call the correct method with data parsed from JSON
+                answer = self._execute_operation(parsed_data['operation'])
+                self.logger.info(f'Sending message: {answer}')
 
-            # Call the correct method with data parsed from JSON
-            answer = self._execute_operation('operation_code')
-
-            self.logger.info(f'Send: {message}')
-            writer.write(data)
-            await writer.drain()
+                writer.write(data)
+                await writer.drain()
 
             self.logger.info('Close the client socket')
             writer.close()
