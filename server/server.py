@@ -77,6 +77,72 @@ class Server():
         self.config = config
         self.dataOperations = DataHandler(self.logger)
 
+    def _execute_operation(self, 
+                            op_code, 
+                            client_name="", 
+                            client_ip="", 
+                            search_name="",
+                            channel_name=""):
+        """
+        This method handles the data structural operations.
+        Takes the client and channel information as arguments.
+        Returns a complete answer that is ready to be sent.
+        """
+        # TODO add logging to this if-structure.
+        answer = {
+            'status': 0
+            }
+        
+        if op_code == op_codes["register_client"]:
+            try:
+                self.dataOperations.client_register(self, client_name, client_ip)
+            except Exception as e:
+                answer['status'] = 1
+                answer['statusmessage'] = e
+
+        if op_code == op_codes["remove_client"]:
+            try:
+                self.dataOperations.client_remove(self, client_name)
+            except Exception as e:
+                answer['status'] = 1
+                answer['statusmessage'] = e
+
+        if op_code == op_codes["find_client"]:
+            try:
+                ip_address = self.dataOperations.find_client(self, search_name)
+                answer['address'] = ip_address
+            except Exception as e:
+                answer['status'] = 1
+                answer['statusmessage'] = e
+
+        if op_code == op_codes["join_channel"]:
+            try:
+                self.dataOperations.join_channel(self, client_name, client_ip, channel_name)
+            except Exception as e:
+                answer['status'] = 1
+                answer['statusmessage'] = e
+
+        if op_code == op_codes["leave_channel"]:
+            try:
+                self.dataOperations.join_channel(self, client_name, channel_name)
+            except Exception as e:
+                answer['status'] = 1
+                answer['statusmessage'] = e
+
+        if op_code == op_codes["message_channel"]:
+            try:
+                recipients = self.dataOperations.find_channel_participants(self, channel_name)
+                pass
+            except Exception as e:
+                answer['status'] = 1
+                answer['statusmessage'] = e
+
+        else:
+            answer['status'] = 1
+            answer['statusmessage'] = "unkown operation"
+        
+        return answer
+
     def run(self):
         # https://asyncio.readthedocs.io/en/latest/tcp_echo.html
 
@@ -86,57 +152,11 @@ class Server():
             addr = writer.get_extra_info('peername')
             print(f'Received {message} from {addr}')
 
-            answer = {
-                'status': 0
-            }
+            # TODO parse the received JSON
 
-            if operation == op_codes["register_client"]:
-                try:
-                    self.dataOperations.client_register(self, "client_name", "client_ip")
-                except Exception as e:
-                    answer['status'] = 1
-                    answer['statusmessage'] = e
-                pass
-            if operation == op_codes["remove_client"]:
-                try:
-                    self.dataOperations.client_remove(self, "client_name")
-                except Exception as e:
-                    answer['status'] = 1
-                    answer['statusmessage'] = e
-                pass
-            if operation == op_codes["find_client"]:
-                try:
-                    ip_address = self.dataOperations.find_client(self, "search_name")
-                    answer['address'] = ip_address
-                except Exception as e:
-                    answer['status'] = 1
-                    answer['statusmessage'] = e
-                pass
-            if operation == op_codes["join_channel"]:
-                try:
-                    self.dataOperations.join_channel(self, "client_name", "client_ip", "channel_name")
-                except Exception as e:
-                    answer['status'] = 1
-                    answer['statusmessage'] = e
-                pass
-            if operation == op_codes["leave_channel"]:
-                try:
-                    self.dataOperations.join_channel(self, "client_name", "channel_name")
-                except Exception as e:
-                    answer['status'] = 1
-                    answer['statusmessage'] = e
-                pass
-            if operation == op_codes["message_channel"]:
-                try:
-                    recipients = self.dataOperations.find_channel_participants(self, "channel_name")
-                    pass
-                except Exception as e:
-                    answer['status'] = 1
-                    answer['statusmessage'] = e
-            else:
-                answer['status'] = 1
-                answer['statusmessage'] = "unkown operation"
 
+            # Call the correct method with data parsed from JSON
+            answer = self._execute_operation('operation_code')
 
             self.logger.info(f'Send: {message}')
             writer.write(data)
