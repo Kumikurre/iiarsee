@@ -68,9 +68,16 @@ class ClientSession():
         """Sends a message to a given channel on the server"""
         pass
 
-    def message_client(self, client_name):
+    def message_client(self, client_name, sender, message):
         """Sends a message to a given client"""
-        client_address = self._find_client_address()
+            #tää kauhee sekasotku pois heti kun funkkarit toimii
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect(("127.0.0.1", 8666))
+            s.sendall(str.encode(f"{sender}: " + message))
+            data = s.recv(1024)
+        new_text = chat_field.text + "\n" + data.decode()
+        chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
+        #client_address = self._find_client_address()
         pass
 
     def receive_message_server(self):
@@ -123,7 +130,7 @@ def receive(self, parameter_list):
 #    esim. /register latsis
 #          /q
 #          /msg sakkoja mitäpä ukko mee töihin
-def accept_input(buff):
+def handle_input(buff):
     """Handler for accepting user input"""
     new_text = chat_field.text + "\n" + input_field.text
     chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
@@ -131,36 +138,23 @@ def accept_input(buff):
     user_input = input_field.text.split()
     try:
         operation = str(user_input[0])
-        recipient = str(user_input[1])
+        receiver = str(user_input[1])
         message = " ".join(map(str, user_input[2:]))
 
         if operation == "/register":
-            #register_client()
-            pass
+            ClientSession().register_client(username)
         if operation== "/read_msg":
-            #read_messages()
-            pass
-        elif operation == "/channel":
-            #message_channel()
-            pass
-        elif operation == "/msg":
-            #message_client()
-            #tää kauhee sekasotku pois heti kun funkkarit toimii
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect(("127.0.0.1", 8666))
-                s.sendall(str.encode(f"{username}: " + message))
-                data = s.recv(1024)
-                new_text = chat_field.text + "\n" + data.decode()
-                chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
-        elif operation == "/join":
-            #join_channel()
-            pass
-        elif operation == "/leave":
-            #leave_channel()
-            pass
-        elif operation == "/quit":
-            #quit_client()
-            pass
+            ClientSession().read_messages(receiver)
+        if operation == "/channel":
+            ClientSession().message_channel(receiver, message)
+        if operation == "/msg":
+            ClientSession().message_client(receiver, username, message)
+        if operation == "/join":
+            ClientSession().join_channel()
+        if operation == "/leave":
+            ClientSession().leave_channel()
+        if operation == "/quit":
+            ClientSession().quit_client()
 
     except IndexError:
         pass
@@ -173,7 +167,7 @@ input_field = prompt_toolkit.widgets.TextArea(
         style="class:input-field",
         multiline=False,
         wrap_lines=False,
-        accept_handler=accept_input,
+        accept_handler=handle_input,
     )
 
 root_container = prompt_toolkit.layout.containers.HSplit([
@@ -190,7 +184,7 @@ root_container = prompt_toolkit.layout.containers.HSplit([
     padding=1, 
     padding_char='_')
 
-input_field.accept_handler = accept_input
+input_field.accept_handler = handle_input
 
 # Add keybinds to make user's life easier
 # Ctrl+C and Ctrl+Q: exit application
@@ -281,4 +275,5 @@ if __name__ == '__main__':
     # the client also needs to have a "server" at all times listening to other clients possibly wanting to connect to them.
     # so we should have some sort of background listener running that interupts (? or what ever you call it) incase someone connects to it
 
-    main(logger, args)
+    #main(logger, args)
+    main()
