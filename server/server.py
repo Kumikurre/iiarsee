@@ -29,13 +29,15 @@ class DataHandler():
         self.logger.info(f'Registering client {client_name}@{client_ip}')
         # TODO should first call find_client() if a client already exists and then return an error message
         try:
+            if self.find_client(client_name):
+                return 1
             self.clients[client_name] = {"address": client_ip}
         except:
             # TODO return a proper error message
             return 1
         return 0
 
-    def client_remove(self, client_name):
+    def client_remove(self, client_name, client_ip):
         self.logger.info(f'Removing client {client_name}@{client_ip}')
         try:
             del self.clients[client_name]
@@ -53,7 +55,7 @@ class DataHandler():
             return 1
         
     def join_channel(self, client_name, client_ip, channel_name):
-        self.logger.info(f'Client {client_name}@{client_ip} joining: {channel_namme}')
+        self.logger.info(f'Client {client_name}@{client_ip} joining: {channel_name}')
         try:
             # This sets the key 'channel_name' as '{}' if it does not exist and returns it otherwise
             self.channels.setdefault(channel_name, {})
@@ -64,8 +66,8 @@ class DataHandler():
             return 1
         return 0
 
-    def leave_channel(self, client_name, channel_name):
-        self.logger.info(f'Client {client_name}@{client_ip} leaving: {channel_namme}')
+    def leave_channel(self, client_name, client_ip, channel_name):
+        self.logger.info(f'Client {client_name}@{client_ip} leaving: {channel_name}')
         try:
             del self.channels[channel_name][client_name]
         except:
@@ -109,44 +111,44 @@ class Server():
         
         if op_code == op_codes["register_client"]:
             try:
-                self.dataOperations.client_register(self, client_name, client_ip)
+                self.dataOperations.client_register(client_name, client_ip)
             except Exception as e:
                 answer['status'] = 1
                 answer['statusmessage'] = e
 
-        if op_code == op_codes["remove_client"]:
+        elif op_code == op_codes["remove_client"]:
             try:
-                self.dataOperations.client_remove(self, client_name)
+                self.dataOperations.client_remove(client_name, client_ip)
             except Exception as e:
                 answer['status'] = 1
                 answer['statusmessage'] = e
 
-        if op_code == op_codes["find_client"]:
+        elif op_code == op_codes["find_client"]:
             try:
-                ip_address = self.dataOperations.find_client(self, search_name)
+                ip_address = self.dataOperations.find_client(search_name)
                 answer['address'] = ip_address
             except Exception as e:
                 answer['status'] = 1
                 answer['statusmessage'] = e
 
-        if op_code == op_codes["join_channel"]:
+        elif op_code == op_codes["join_channel"]:
             try:
-                self.dataOperations.join_channel(self, client_name, client_ip, channel_name)
+                self.dataOperations.join_channel(client_name, client_ip, channel_name)
             except Exception as e:
                 answer['status'] = 1
                 answer['statusmessage'] = e
 
-        if op_code == op_codes["leave_channel"]:
+        elif op_code == op_codes["leave_channel"]:
             try:
-                self.dataOperations.join_channel(self, client_name, channel_name)
+                self.dataOperations.leave_channel(client_name, client_ip, channel_name)
             except Exception as e:
                 answer['status'] = 1
                 answer['statusmessage'] = e
 
-        if op_code == op_codes["message_channel"]:
+        elif op_code == op_codes["message_channel"]:
             try:
-                recipients = self.dataOperations.find_channel_participants(self, channel_name)
-                pass
+                recipients = self.dataOperations.find_channel_participants(channel_name)
+                answer['participants'] = recipients
             except Exception as e:
                 answer['status'] = 1
                 answer['statusmessage'] = e
@@ -177,7 +179,7 @@ class Server():
                 answer = self._execute_operation(parsed_data['operation'])
                 self.logger.info(f'Sending message: {answer}')
 
-                writer.write(data)
+                writer.write(answer)
                 await writer.drain()
 
             self.logger.info('Close the client socket')
