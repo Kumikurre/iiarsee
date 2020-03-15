@@ -7,6 +7,7 @@ import prompt_toolkit
 import sys
 
 #### CONSTANTS:
+client_session = None
 username = prompt_toolkit.prompt("Register as: ")
 client_start_message = f"Welcome to iiarsee {username}. Press [Ctrl-Q] to quit."
 client_main_menu = \
@@ -37,9 +38,11 @@ possible_operations_to_server: {
 # should we have a separate worker for p2p messaging to act as a server to the other client, which would take care of the message
 # receiving and notification of the actual client
 
+
 class ClientSession():
-    def __init__(self):
-        self.client_name = None
+    def __init__(self, logger, args, client_name):
+        self.logger = logger
+        self.client_name = client_name
         self.channels = {}
         # channels = {
         #   "channel1": [{timestamp: <timestamp>, client_name: <client_name>, message: <informative message>"}],
@@ -54,6 +57,20 @@ class ClientSession():
         #       "state": "INACTIVE"
         #   }
         # }
+        self.register_client(self.client_name)
+
+    async def tcp_client(self, address, port, message, loop):
+        reader, writer = await asyncio.open_connection(address, port, loop=loop)
+
+        self.logger.debug("tcp_client(): sending message %s to address %s on port %s",
+                          message, address, port)
+        writer.write(message.encode())
+
+        data = await reader.read(100)
+        self.logger.debug("tcp_client(): received response: %s", data)
+
+        self.logger.debug("tcp_client(): closing client")
+        writer.close()
 
     def register_client(self, client_name):
         """A method for registering the client to the server"""
@@ -68,17 +85,30 @@ class ClientSession():
         """Sends a message to a given channel on the server"""
         pass
 
-    def message_client(self, client_name, sender, message):
+    def message_client(self, receiver_name, message):
         """Sends a message to a given client"""
-            #tää kauhee sekasotku pois heti kun funkkarit toimii
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect(("127.0.0.1", 8666))
-            s.sendall(str.encode(f"{sender}: " + message))
-            data = s.recv(1024)
+        async def tcp_client(address, port, message, loop):
+            reader, writer = await asyncio.open_connection(address, port, loop=loop)
+
+            self.logger.debug("tcp_client(): sending message %s to address %s on port %s",
+                            message, address, port)
+            writer.write(message.encode())
+
+            data = await reader.read(100)
+            self.logger.debug("tcp_client(): received response: %s", data)
+
+            self.logger.debug("tcp_client(): closing client")
+            writer.close()
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(tcp_client("127.0.0.1", 8666, message, loop))
+        loop.close()
+        # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        #     s.connect(("127.0.0.1", 8666))
+        #     s.sendall(str.encode(f"{sender}: " + message))
+        #     data = s.recv(1024)
         new_text = chat_field.text + "\n" + data.decode()
         chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
         #client_address = self._find_client_address()
-        pass
 
     def receive_message_server(self):
         """Handle receiving of message from server"""
@@ -130,6 +160,7 @@ def receive(self, parameter_list):
 #    esim. /register latsis
 #          /q
 #          /msg sakkoja mitäpä ukko mee töihin
+#          /msg latsis meeppä poka ite :d
 def handle_input(buff):
     """Handler for accepting user input"""
     new_text = chat_field.text + "\n" + input_field.text
@@ -141,20 +172,23 @@ def handle_input(buff):
         receiver = str(user_input[1])
         message = " ".join(map(str, user_input[2:]))
 
-        if operation == "/register":
-            ClientSession().register_client(username)
-        if operation== "/read_msg":
-            ClientSession().read_messages(receiver)
-        if operation == "/channel":
-            ClientSession().message_channel(receiver, message)
-        if operation == "/msg":
-            ClientSession().message_client(receiver, username, message)
-        if operation == "/join":
-            ClientSession().join_channel()
-        if operation == "/leave":
-            ClientSession().leave_channel()
-        if operation == "/quit":
-            ClientSession().quit_client()
+        # if operation == "/register": # tehhää tämä heti kun on saatu user_name
+        #     ClientSession().register_client(username)
+        if operation == "/read_msg":
+            client_session.read_messages(receiver)
+        elif operation == "/channel":
+            client_session.message_channel(receiver, message)
+        elif operation == "/msg":
+            client_session.message_client(receiver, message)
+        elif operation == "/join":
+            client_session.join_channel()
+        elif operation == "/leave":
+            client_session.leave_channel()
+        elif operation == "/quit":
+            client_session.quit_client()
+        else:
+            logger.error("invalid operation: %s", operation)
+            return False
 
     except IndexError:
         pass
@@ -203,41 +237,6 @@ application = prompt_toolkit.application.Application(
     full_screen=True)
 
 
-def main():
-    channels = {}
-    privates = {}
-    application.run()
-    # session = prompt_toolkit.PromptSession()
-    # while True:
-    #     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    #         s.connect((args.address, args.port))
-
-    #         try:
-    #             # here we handle the client giving us a command
-    #             # interactive shell code here?
-    #             # have logic to only allow the given commands and retry if not in the possible commands
-    #             # 
-    #             text = session.prompt('client> ')
-    #         except KeyboardInterrupt:
-    #             continue
-    #         except EOFError:
-    #             break
-    #         else:
-    #             ### If else block which checks for each possible command and calls the corresponding methods
-                
-    #             print('You entered:', text)
-    #             print("sending...")
-    #             s.sendall(text.encode())
-    #             data = s.recv(1024)
-    #             if not data:
-    #                 break
-    #             # here comes the logic after receiving an answer from the server.
-    #             # another dict/function/class with functions/methods for possible responses?
-    #             print("Received back:", data.decode())
-    #             s.close()
-    print('Done.')
-
-
 if __name__ == '__main__':
     logger = logging.getLogger("iiarsee_client")
     logger.setLevel("INFO")
@@ -245,15 +244,15 @@ if __name__ == '__main__':
     fh = logging.FileHandler('iiarsee_client.log')
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
+    # ch = logging.StreamHandler()
+    # ch.setLevel(logging.ERROR)
     # create formatter and add it to the handlers
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
+    # ch.setFormatter(formatter)
     # add the handlers to the logger
     logger.addHandler(fh)
-    logger.addHandler(ch)
+    # logger.addHandler(ch)
 
     logger.info("__main__: starting the client")
 
@@ -275,5 +274,5 @@ if __name__ == '__main__':
     # the client also needs to have a "server" at all times listening to other clients possibly wanting to connect to them.
     # so we should have some sort of background listener running that interupts (? or what ever you call it) incase someone connects to it
 
-    #main(logger, args)
-    main()
+    client_session = ClientSession(logger, args, username)
+    application.run()
