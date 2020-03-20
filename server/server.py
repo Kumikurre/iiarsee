@@ -29,9 +29,10 @@ class DataHandler():
         self.logger.info(f'Registering client {client_name}@{client_ip}')
         try:
             self.logger.info(f'Checking if {client_name} already exists...')
-            if self.find_client(client_name):
+            if not self.find_client(client_name):
+                self.clients[client_name] = {"address": client_ip}
+            else:
                 return 1
-            self.clients[client_name] = {"address": client_ip}
         except:
             # TODO return a proper error message
             return 1
@@ -49,8 +50,11 @@ class DataHandler():
     def find_client(self, search_name):
         self.logger.info(f'Finding client {search_name}')
         try:
-            return self.clients[search_name]
-        except:
+            temp_name = self.clients[search_name]
+            print("temp_name: ", temp_name)
+            return temp_name
+        except Exception as e:
+            print(e)
             # TODO return a proper error message
             return 1
         
@@ -83,6 +87,9 @@ class DataHandler():
             # TODO return a proper error message
             return 1
 
+    def __check_internal_data_structure__(self):
+        print('clients:', self.clients)
+        print('channels:', self.channels)
 
 
 ####### Actual server class that handles communication #######
@@ -111,7 +118,7 @@ class Server():
         
         if op_code == op_codes["register_client"]:
             try:
-                self.dataOperations.client_register(client_name, client_ip)
+                answer['status'] = self.dataOperations.client_register(client_name, client_ip)
             except Exception as e:
                 answer['status'] = 1
                 answer['statusmessage'] = str(e)
@@ -194,6 +201,8 @@ class Server():
 
             self.logger.info('Close the client socket')
             writer.close()
+            # THIS PRINT IS JUST FOR TESTING THE THING SO YOU CAN SEE THE INTERNAL DATA STRUCTURES AFTER EACH MESSAGE
+            self.dataOperations.__check_internal_data_structure__()
 
         loop = asyncio.get_event_loop()
         coroutine = asyncio.start_server(handle_socketdata, self.config['HOSTNAME'], self.config['PORT'], loop=loop)
@@ -206,6 +215,7 @@ class Server():
         except KeyboardInterrupt:
             pass
 
+        
         # Close the server
         server.close()
         loop.run_until_complete(server.wait_closed())
