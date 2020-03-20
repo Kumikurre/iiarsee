@@ -27,8 +27,8 @@ class DataHandler():
 
     def client_register(self, client_name, client_ip):
         self.logger.info(f'Registering client {client_name}@{client_ip}')
-        # TODO should first call find_client() if a client already exists and then return an error message
         try:
+            self.logger.info(f'Checking if {client_name} already exists...')
             if self.find_client(client_name):
                 return 1
             self.clients[client_name] = {"address": client_ip}
@@ -167,10 +167,11 @@ class Server():
             data = await reader.read(256)
             message = data.decode()
             addr = writer.get_extra_info('peername')
-            print(f'Received {message} from {addr}')
+            addr = addr[0] + ':' + str(addr[1])
+            self.logger.info(f'Received {message} from {addr}')
 
             try:
-                parsed_data = json.loads(message.decode('utf-8'))
+                parsed_data = json.loads(message)
             except Exception as e:
                 parsed_data = None
                 answer = {
@@ -183,10 +184,9 @@ class Server():
                 # Call the correct method with data parsed from JSON
                 operation = parsed_data.get('operation')
                 client_name = parsed_data.get('client_name')
-                client_ip = parsed_data.get('client_ip')
                 search_name = parsed_data.get('search_name')
                 channel_name = parsed_data.get('channel_name')
-                answer = self._execute_operation(operation, client_name=client_name, client_ip=client_ip, search_name=search_name, channel_name=channel_name)
+                answer = self._execute_operation(operation, client_name=client_name, client_ip=addr, search_name=search_name, channel_name=channel_name)
                 self.logger.info(f'Sending to {addr}: {answer}')
 
             writer.write(json.dumps(answer).encode('utf-8'))
