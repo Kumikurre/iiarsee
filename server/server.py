@@ -114,14 +114,14 @@ class Server():
                 self.dataOperations.client_register(client_name, client_ip)
             except Exception as e:
                 answer['status'] = 1
-                answer['statusmessage'] = e
+                answer['statusmessage'] = str(e)
 
         elif op_code == op_codes["remove_client"]:
             try:
                 self.dataOperations.client_remove(client_name, client_ip)
             except Exception as e:
                 answer['status'] = 1
-                answer['statusmessage'] = e
+                answer['statusmessage'] = str(e)
 
         elif op_code == op_codes["find_client"]:
             try:
@@ -129,21 +129,21 @@ class Server():
                 answer['address'] = ip_address
             except Exception as e:
                 answer['status'] = 1
-                answer['statusmessage'] = e
+                answer['statusmessage'] = str(e)
 
         elif op_code == op_codes["join_channel"]:
             try:
                 self.dataOperations.join_channel(client_name, client_ip, channel_name)
             except Exception as e:
                 answer['status'] = 1
-                answer['statusmessage'] = e
+                answer['statusmessage'] = str(e)
 
         elif op_code == op_codes["leave_channel"]:
             try:
                 self.dataOperations.leave_channel(client_name, client_ip, channel_name)
             except Exception as e:
                 answer['status'] = 1
-                answer['statusmessage'] = e
+                answer['statusmessage'] = str(e)
 
         elif op_code == op_codes["message_channel"]:
             try:
@@ -151,13 +151,14 @@ class Server():
                 answer['participants'] = recipients
             except Exception as e:
                 answer['status'] = 1
-                answer['statusmessage'] = e
+                answer['statusmessage'] = str(e)
 
         else:
             answer['status'] = 1
             answer['statusmessage'] = "unkown operation"
         
         return answer
+
 
     def run(self):
         # https://asyncio.readthedocs.io/en/latest/tcp_echo.html
@@ -169,18 +170,27 @@ class Server():
             print(f'Received {message} from {addr}')
 
             try:
-                parsed_data = json.loads(message)
-            except:
+                parsed_data = json.loads(message.decode('utf-8'))
+            except Exception as e:
                 parsed_data = None
+                answer = {
+                    'status': 1,
+                    'statusmessage': str(e)
+                    }
                 self.logger.info(f'JSON parsing failed for received message')
 
             if parsed_data:
                 # Call the correct method with data parsed from JSON
-                answer = self._execute_operation(parsed_data['operation'])
-                self.logger.info(f'Sending message: {answer}')
+                operation = parsed_data.get('operation')
+                client_name = parsed_data.get('client_name')
+                client_ip = parsed_data.get('client_ip')
+                search_name = parsed_data.get('search_name')
+                channel_name = parsed_data.get('channel_name')
+                answer = self._execute_operation(operation, client_name=client_name, client_ip=client_ip, search_name=search_name, channel_name=channel_name)
+                self.logger.info(f'Sending to {addr}: {answer}')
 
-                writer.write(answer)
-                await writer.drain()
+            writer.write(json.dumps(answer).encode('utf-8'))
+            await writer.drain()
 
             self.logger.info('Close the client socket')
             writer.close()
