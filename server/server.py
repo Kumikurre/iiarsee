@@ -28,10 +28,11 @@ class DataHandler():
     def client_register(self, client_name, client_ip):
         self.logger.info(f'Registering client {client_name}@{client_ip}')
         try:
-            self.logger.info(f'Checking if {client_name} already exists...')
-            if not self.find_client(client_name):
+            
+            if self.find_client(client_name) == 1:
                 self.clients[client_name] = {"address": client_ip}
             else:
+                self.logger.info(f'User {client_name} already exists')
                 return 1
         except:
             # TODO return a proper error message
@@ -49,15 +50,11 @@ class DataHandler():
 
     def find_client(self, search_name):
         self.logger.info(f'Finding client {search_name}')
-        try:
-            temp_name = self.clients[search_name]
-            print("temp_name: ", temp_name)
-            return temp_name
-        except Exception as e:
-            print(e)
-            # TODO return a proper error message
+        if search_name in self.clients:
+            return self.clients[search_name]
+        else:
             return 1
-        
+
     def join_channel(self, client_name, client_ip, channel_name):
         self.logger.info(f'Client {client_name}@{client_ip} joining: {channel_name}')
         try:
