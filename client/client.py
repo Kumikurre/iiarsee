@@ -171,8 +171,9 @@ def handle_input(buff):
     user_input = input_field.text.split()
     try:
         operation = str(user_input[0])
-        receiver = str(user_input[1])
-        message = " ".join(map(str, user_input[2:]))
+        if len(user_input) > 2:
+            receiver = str(user_input[1])
+            message = " ".join(map(str, user_input[2:]))
 
         # if operation == "/register": # tehhää tämä heti kun on saatu user_name
         #     ClientSession().register_client(username)
