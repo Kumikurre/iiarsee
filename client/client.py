@@ -127,7 +127,7 @@ class ClientSession():
         self.logger.info("ClientSession.join_channel(): joined channel %s, received response: %s", channel_name, response)
 
 
-    def leave_channel(self, client_name, channel_name):
+    def leave_channel(self, channel_name):
         """Leaves a given channel on the server"""
         self.logger.info("ClientSession.join_channel(): leaving channel %s on the server", channel_name)
         message = {"operation":"leave_channel",
