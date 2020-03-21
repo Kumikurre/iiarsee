@@ -44,6 +44,8 @@ class ClientSession():
         self.logger = logger
         self.client_name = client_name
         self.channels = {}
+        self.server_addr = args.address
+        self.server_port = args.port
         # channels = {
         #   "channel1": [{timestamp: <timestamp>, client_name: <client_name>, message: <informative message>"}],
         #   "channel2": []
@@ -57,13 +59,25 @@ class ClientSession():
         #       "state": "INACTIVE"
         #   }
         # }
-        self.register_client(self.client_name)
+        self.logger.debug("ClientSession.__init__(): initializing client %s with arguments: %s", self.client_name, args)
+        # init the event loop for whole client to server
+        self.loop = asyncio.get_event_loop()
+        # data = self.loop.run_until_complete(self.tcp_client("127.0.0.1", 8666, message, self.loop))
+        # loop.close()
+        message = {"operation":"register_client",
+                   "client_name": self.client_name}
+        # register the client to server, hardcoded defaults
+        data = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
+        self.logger.debug("ClientSession.__init__(): registered client to server, received response: %s", data)
 
+    # @staticmethod
     async def tcp_client(self, address, port, message, loop):
         reader, writer = await asyncio.open_connection(address, port, loop=loop)
 
         self.logger.debug("tcp_client(): sending message %s to address %s on port %s",
                           message, address, port)
+        if type(message) is not str:
+            message = json.dumps(message)
         writer.write(message.encode())
 
         data = await reader.read(100)
@@ -71,11 +85,7 @@ class ClientSession():
 
         self.logger.debug("tcp_client(): closing client")
         writer.close()
-
-    def register_client(self, client_name):
-        """A method for registering the client to the server"""
-        # this method sets the self.client_name
-        pass
+        return data
 
     def read_messages(self, channel_name, rows=5):
         """Prints n last messages for given channel"""
@@ -87,25 +97,8 @@ class ClientSession():
 
     def message_client(self, receiver_name, message):
         """Sends a message to a given client"""
-        async def tcp_client(address, port, message, loop):
-            reader, writer = await asyncio.open_connection(address, port, loop=loop)
 
-            self.logger.debug("tcp_client(): sending message %s to address %s on port %s",
-                            message, address, port)
-            writer.write(message.encode())
-
-            data = await reader.read(100)
-            self.logger.debug("tcp_client(): received response: %s", data)
-
-            self.logger.debug("tcp_client(): closing client")
-            writer.close()
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(tcp_client("127.0.0.1", 8666, message, loop))
-        loop.close()
-        # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        #     s.connect(("127.0.0.1", 8666))
-        #     s.sendall(str.encode(f"{sender}: " + message))
-        #     data = s.recv(1024)
+        data = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         new_text = chat_field.text + "\n" + data.decode()
         chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
         #client_address = self._find_client_address()
@@ -126,15 +119,24 @@ class ClientSession():
         """Leaves a given channel on the server"""
         pass
 
-    def quit_client(self, client_name, channel_name, message):
-        """Sends a "CLIENT_QUITTING" message to the server and other clients in the clients object"""
-        pass
+    def quit_client(self, app):
+        """Sends a "remove_client" message to the server and other clients in the clients object"""
+        message = {"operation": "remove_client",
+                   "client_name": self.client_name}
+        # register the client to server, hardcoded defaults
+        data = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
+        self.logger.debug("ClientSession.quit_client(): sent remove_client message to server, received response: %s", data)
+
+        # last
+        self.loop.close()
+        self.logger.debug("ClientSession.quit_client(): quitting client")
+        app.exit()
         # send also quit message to whole client_address_book -> client removed from client_address_book
 
     def _find_client_address(self, client_name, client_ip):
-        """Find a given client's true network address from the server"""
+        """Find a given client"s true network address from the server"""
         pass
-        # clients send quit message also to other clients  they're in contact with
+        # clients send quit message also to other clients  they"re in contact with
         # clients keep a client_address_book in which they also keep the state of other clients
         # if client_name in clients and clients[client_name].state == "ACTIVE": suoraan clientille jutteleen
         # muuten käydään serverillä
@@ -185,13 +187,13 @@ def handle_input(buff):
         elif operation == "/leave":
             client_session.leave_channel()
         elif operation == "/quit":
-            client_session.quit_client()
+            client_session.quit_client(application)
         else:
             logger.error("invalid operation: %s", operation)
             return False
 
-    except IndexError:
-        pass
+    except Exception as e:
+        logger.debug("failed to parse user input %s with error", user_input, e)
 
 # Create the layout
 chat_field = prompt_toolkit.widgets.TextArea()
@@ -213,23 +215,24 @@ root_container = prompt_toolkit.layout.containers.HSplit([
         chat_field, 
         input_field], 
         padding=1, 
-        padding_char='_'),
+        padding_char="_"),
     ], 
     padding=1, 
-    padding_char='_')
+    padding_char="_")
 
 input_field.accept_handler = handle_input
 
-# Add keybinds to make user's life easier
+# Add keybinds to make user"s life easier
 # Ctrl+C and Ctrl+Q: exit application
 kb = prompt_toolkit.key_binding.KeyBindings()
-@kb.add('c-c', eager=True)
-@kb.add('c-q', eager=True)
+@kb.add("c-c", eager=True)
+@kb.add("c-q", eager=True)
 def _(event):
     """Pressing Ctrl-Q or Ctrl-C will exit the user interface."""
-    event.app.exit()
+    client_session.quit_client(event.app)
+    # event.app.exit()
 
-# Create an 'Application' instance
+# Create an "Application" instance
 application = prompt_toolkit.application.Application(
     layout=prompt_toolkit.layout.layout.Layout(root_container, focused_element=input_field),
     key_bindings=kb,
@@ -237,17 +240,17 @@ application = prompt_toolkit.application.Application(
     full_screen=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logger = logging.getLogger("iiarsee_client")
     logger.setLevel("INFO")
     # create file handler which logs even debug messages
-    fh = logging.FileHandler('iiarsee_client.log')
+    fh = logging.FileHandler("iiarsee_client.log")
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     # ch = logging.StreamHandler()
     # ch.setLevel(logging.ERROR)
     # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     fh.setFormatter(formatter)
     # ch.setFormatter(formatter)
     # add the handlers to the logger
@@ -264,11 +267,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # default to local host if no arguments given
     if not args.address:
-        args.address = '127.0.0.1'
+        args.address = "127.0.0.1"
     if not args.port:
         args.port = 8666
-    if args.debug:
-        logger.setLevel("debug")
+    # if args.debug:
+    # default debugging...
+    logger.setLevel("DEBUG")
 
     logger.debug("__main__: set client arguments: %s", args)
     # the client also needs to have a "server" at all times listening to other clients possibly wanting to connect to them.
