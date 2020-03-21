@@ -46,6 +46,7 @@ class ClientSession():
         self.channels = {}
         self.server_addr = args.address
         self.server_port = args.port
+        self.client_port = args.client_port
         # channels = {
         #   "channel1": [{timestamp: <timestamp>, client_name: <client_name>, message: <informative message>"}],
         #   "channel2": []
@@ -85,10 +86,12 @@ class ClientSession():
 
         self.logger.debug("tcp_client(): closing client")
         writer.close()
-        return data
+        return json.loads(data)
 
     def read_messages(self, channel_name, rows=5):
         """Prints n last messages for given channel"""
+        # TODO: Need to create a method for reading all the messages... yes. But also need to add the logic to each method to store the sent and received messages
+        # from each channel and user aswell. :thinking:... Ez pz?
         pass
 
     def message_channel(self, channel_name, msg):
@@ -101,20 +104,30 @@ class ClientSession():
         response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.info("ClientSession.message_channel(): sent message to channel, received response: %s", response)
 
-    def message_client(self, receiver_name, message):
+    def message_client(self, client_name, msg):
         """Sends a message to a given client"""
-
-        data = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
+        self.logger.info("ClientSession.message_client(): sending message to client %s, resolving address first", client_name)
+        client_address = self._find_client_address(client_name)
+        self.logger.info("ClientSession.message_channel(): sending message %s to client %s in addr %s", msg, client_name, client_address)
+        message = {"operation":"message_client",
+                   "client_name": self.client_name,
+                   "message": msg}
+        data = self.loop.run_until_complete(self.tcp_client(client_address, self.client_port, message, self.loop))  # We probably should not hardcode the client port but instead get it from the server? dunno...
         new_text = chat_field.text + "\n" + data.decode()
         chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
         #client_address = self._find_client_address()
 
     def receive_message_server(self):
         """Handle receiving of message from server"""
+        # Ummm... I suppose the server knows our address and the port we have for communicating to it...
+        # but is the socket actually open when we are not actively sending a message to the server?
+        # Do we actually need the client-side server implementation also for this to work? :P
         pass
 
     def receive_message_client(self):
-        """Handle receiving of message from server"""
+        """Handle receiving of message from clients"""
+        # I suppose we need to have a asyncio server active for receiving messages from other clients,
+        # in other words we need to impelent also a server
         pass
 
     def join_channel(self, channel_name):
@@ -150,13 +163,14 @@ class ClientSession():
         app.exit()
         # send also quit message to whole client_address_book -> client removed from client_address_book
 
-    def _find_client_address(self, client_name, client_ip):
+    def _find_client_address(self, client_name):
         """Find a given client"s true network address from the server"""
-        pass
-        # clients send quit message also to other clients  they"re in contact with
-        # clients keep a client_address_book in which they also keep the state of other clients
-        # if client_name in clients and clients[client_name].state == "ACTIVE": suoraan clientille jutteleen
-        # muuten käydään serverillä
+        self.logger.info("ClientSession.join_channel(): finding address for client %s", client_name)
+        message = {"operation":"find_client",
+                   "client_name": client_name}
+        response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
+        self.logger.info("ClientSession.join_channel(): found address for client %s, response: %s", client_name, response)
+        return response["address"]
 
 
 
@@ -289,6 +303,8 @@ if __name__ == "__main__":
         args.address = "127.0.0.1"
     if not args.port:
         args.port = 8666
+    if not args.client_port:
+        args.client_port = 8777
     # if args.debug:
     # default debugging...
     logger.setLevel("DEBUG")
