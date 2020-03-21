@@ -91,9 +91,15 @@ class ClientSession():
         """Prints n last messages for given channel"""
         pass
 
-    def message_channel(self, channel_name, message):
+    def message_channel(self, channel_name, msg):
         """Sends a message to a given channel on the server"""
-        pass
+        self.logger.info("ClientSession.message_channel(): sending a message %s to channel %s", msg, channel_name)
+        message = {"operation":"message_channel",
+                   "client_name": self.client_name,
+                   "channel_name": channel_name,
+                   "message": msg}
+        response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
+        self.logger.info("ClientSession.message_channel(): sent message to channel, received response: %s", response)
 
     def message_client(self, receiver_name, message):
         """Sends a message to a given client"""
@@ -111,13 +117,24 @@ class ClientSession():
         """Handle receiving of message from server"""
         pass
 
-    def join_channel(self, client_name, client_ip, channel_name):
+    def join_channel(self, channel_name):
         """Joins a given channel on the server"""
-        pass
+        self.logger.info("ClientSession.join_channel(): joining channel %s on the server", channel_name)
+        message = {"operation":"join_channel",
+                   "client_name": self.client_name,
+                   "channel_name": channel_name}
+        response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
+        self.logger.info("ClientSession.join_channel(): joined channel %s, received response: %s", channel_name, response)
+
 
     def leave_channel(self, client_name, channel_name):
         """Leaves a given channel on the server"""
-        pass
+        self.logger.info("ClientSession.join_channel(): leaving channel %s on the server", channel_name)
+        message = {"operation":"leave_channel",
+                   "client_name": self.client_name,
+                   "channel_name": channel_name}
+        response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
+        self.logger.info("ClientSession.join_channel(): leaved channel %s, received response: %s", channel_name, response)
 
     def quit_client(self, app):
         """Sends a "remove_client" message to the server and other clients in the clients object"""
@@ -171,22 +188,23 @@ def handle_input(buff):
     user_input = input_field.text.split()
     try:
         operation = str(user_input[0])
+        if len(user_input) > 1:
+            opt_parameter = str(user_input[1])
         if len(user_input) > 2:
-            receiver = str(user_input[1])
             message = " ".join(map(str, user_input[2:]))
 
         # if operation == "/register": # tehhää tämä heti kun on saatu user_name
         #     ClientSession().register_client(username)
-        if operation == "/read_msg":
-            client_session.read_messages(receiver)
-        elif operation == "/channel":
-            client_session.message_channel(receiver, message)
-        elif operation == "/msg":
-            client_session.message_client(receiver, message)
-        elif operation == "/join":
-            client_session.join_channel()
-        elif operation == "/leave":
-            client_session.leave_channel()
+        if operation == "/read_msgs":
+            client_session.read_messages(opt_parameter)
+        elif operation == "/msg_channel":
+            client_session.message_channel(opt_parameter, message)
+        elif operation == "/msg_client":
+            client_session.message_client(opt_parameter, message)
+        elif operation == "/join_channel":
+            client_session.join_channel(opt_parameter)
+        elif operation == "/leave_channel":
+            client_session.leave_channel(opt_parameter)
         elif operation == "/quit":
             client_session.quit_client(application)
         else:
