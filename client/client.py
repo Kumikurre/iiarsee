@@ -296,6 +296,7 @@ if __name__ == "__main__":
     parser.add_argument("--debug", help="Enable debugging")
     parser.add_argument("--address", help="IP addrss for the server")
     parser.add_argument("--port", help="Which port to connect to", type=int)
+    parser.add_argument("--client_port", help="Port for inter-client connections", type=int)
 
     args = parser.parse_args()
     # default to local host if no arguments given
