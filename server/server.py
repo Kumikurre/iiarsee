@@ -92,8 +92,6 @@ class DataHandler():
     def __check_internal_data_structure__(self):
         self.logger.debug(f'clients: {self.clients}')
         self.logger.debug(f'channels: {self.channels}')
-        print('clients:', self.clients)
-        print('channels:', self.channels)
 
 
 ####### Actual server class that handles communication #######
