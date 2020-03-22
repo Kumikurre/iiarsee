@@ -44,6 +44,10 @@ class DataHandler():
         self.logger.info(f'Removing client {client_name}@{client_ip}')
         try:
             del self.clients[client_name]
+            for channel in self.channels:
+                if client_name in self.channels[channel]:
+                    self.logger.info(f'Removing client {client_name} from {channel}')
+                    del self.channels[channel][client_name]
         except:
             # TODO return a proper error message
             return 1
