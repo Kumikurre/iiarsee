@@ -6,6 +6,7 @@ import socket
 import prompt_toolkit
 import sys
 import nest_asyncio
+from datetime import datetime
 
 nest_asyncio.apply()
 
@@ -68,11 +69,56 @@ class ClientSession():
         self.loop = asyncio.get_event_loop()
         # data = self.loop.run_until_complete(self.tcp_client("127.0.0.1", 8666, message, self.loop))
         # loop.close()
+        # init the client side server for receiving new messages and talking to other clients
+        client_server = asyncio.start_server(self.client_server, "0.0.0.0", self.client_port)
+        # start the server and run it in the background (we have no controls over it basically)
+        # asyncio.create_task(self.client_server())
         message = {"operation":"register_client",
-                   "client_name": self.client_name}
+                   "client_name": self.client_name,
+                   "client_port": self.client_port}
         # register the client to server, hardcoded defaults
         register_return = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.debug(f"ClientSession.__init__(): registered client to server, received response: {register_return}")
+
+    async def client_server(self, reader, writer):
+        data = await reader.read(100)
+        message = data.decode()
+        addr = writer.get_extra_info('peername')
+        addr = addr[0] + ':' + str(addr[1])
+        self.logger.info(f'client_server(): Received {message} from {addr}')
+
+        try:
+            parsed_data = json.loads(message)
+        except Exception as e:
+            parsed_data = None
+            answer = {
+                'status': 1,
+                'statusmessage': str(e)
+                }
+            self.logger.info(f'JSON parsing failed for received message')
+
+        # Call the correct method with data parsed from JSON
+        if parsed_data:
+            operation = parsed_data.get('operation')
+            client_name = parsed_data.get('client_name')
+            channel_name = parsed_data.get('channel_name')
+            message = parsed_data.get('message')
+            sender = parsed_data.get('sender')
+            # do the operations here? receive messages mainly...
+            # if we have a channel name, assume its from the server
+            if channel_name:
+                self.channels[channel_name]['messages'].append(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': <' + sender + '>: ' + message) # should we have timestamps?
+            # if we have client name its from another client, yes we have no security here... (giggle)
+            elif client_name:
+                self.clients[client_name]['messages'].append(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': <' + client_name + '>: ' + message)
+
+
+        writer.write(json.dumps(answer).encode('utf-8'))
+        await writer.drain()
+
+        self.logger.info('Close the client socket')
+        writer.close()
+
 
     # @staticmethod
     async def tcp_client(self, address, port, message, loop):
