@@ -108,10 +108,19 @@ class ClientSession():
             # do the operations here? receive messages mainly...
             # if we have a channel name, assume its from the server
             if channel_name:
+                self.logger.info(f'client_server(): received a message {message} for channel {channel_name}')
+                self.channels.setdefault(channel_name, {"messages": []})
                 self.channels[channel_name]['messages'].append(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': <' + sender + '>: ' + message) # should we have timestamps?
+                self.logger.debug(f'!!!client_server(): channel messages after assignment: {self.channels[channel_name]["messages"]}')
+
+
             # if we have client name its from another client, yes we have no security here... (giggle)
             elif client_name:
+                self.logger.info(f'client_server(): received a message {message} from client {client_name}')
+                self.clients.setdefault(client_name, {"messages": []})
                 self.clients[client_name]['messages'].append(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': <' + client_name + '>: ' + message)
+                self.logger.debug(f'!!!client_server(): channel messages after assignment: {self.channels[channel_name]["messages"]}')
+
 
 
         writer.write(json.dumps(answer).encode('utf-8'))
@@ -137,11 +146,30 @@ class ClientSession():
         writer.close()
         return json.loads(data)
 
-    def read_messages(self, channel_name, rows=5):
+    def read_channel_messages(self, channel_name, rows=5):
         """Prints n last messages for given channel"""
-        # TODO: Need to create a method for reading all the messages... yes. But also need to add the logic to each method to store the sent and received messages
-        # from each channel and user aswell. :thinking:... Ez pz?
-        pass
+        if channel_name in self.channels:
+            new_text = ""
+            for row in self.channels[channel_name]['messages'][-rows:]:
+                # "add to the top"
+                new_text = str(row) + "\n" + new_text
+            chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
+        else:
+            new_text = "Channel not found\n"
+            chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
+
+
+    def read_client_messages(self, client_name, rows=5):
+        """Prints n last messages for given client"""
+        if client_name in self.clients:
+            new_text = ""
+            for row in self.clients[client_name]['messages'][-rows:]:
+                # "add to the top"
+                new_text = str(row) + "\n" + new_text
+            chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
+        else:
+            new_text = "Client not found\n"
+            chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
 
     def message_channel(self, channel_name, msg):
         """Sends a message to a given channel on the server"""
@@ -242,7 +270,11 @@ def handle_input(buff):
         if len(user_input) > 2:
             message = " ".join(map(str, user_input[2:]))
 
-        if operation == "/msg_channel":
+        if operation == "/read_channel":
+            client_session.read_channel_messages(opt_parameter)
+        elif operation == "/read_client":
+            client_session.read_client_messages(opt_parameter)
+        elif operation == "/msg_channel":
             client_session.message_channel(opt_parameter, message)
         elif operation == "/msg_client":
             client_session.message_client(opt_parameter, message)
