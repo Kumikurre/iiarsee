@@ -183,9 +183,10 @@ class Server():
             "channel_name": channel_name,
             "message": message
         }
-        loop = asyncio.get_event_loop()
         for participant in channel_participants:
-            asyncio.ensure_future(self._send_to_single_client(self.dataOperations.find_client(participant), msg))
+            recipient = self.dataOperations.find_client(participant)
+            if participant != 1:
+                asyncio.ensure_future(self._send_to_single_client(recipient["address"], msg))
         return 0
 
     def run(self):
@@ -220,7 +221,10 @@ class Server():
                 message = parsed_data.get('message')
                 if operation == op_codes["message_channel"]:
                     recipients = self._execute_operation(op_codes["channel_participants"], channel_name=channel_name)
-                    self._broadcast_to_channel(recipients, client_name, channel_name, message)
+                    statuscode = self._broadcast_to_channel(recipients["participants"], client_name, channel_name, message)
+                    answer = {
+                        'status': statuscode,
+                        }
                 else:
                     answer = self._execute_operation(operation, client_name=client_name, client_ip=addr, search_name=search_name, message=message, channel_name=channel_name)
                     self.logger.info(f'Sending to {addr}: {answer}')
