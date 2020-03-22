@@ -13,7 +13,7 @@ nest_asyncio.apply()
 #### CONSTANTS:
 client_session = None
 username = prompt_toolkit.prompt("Register as: ")
-client_start_message = f"Welcome to iiarsee {username}. Press [Ctrl-Q] to quit."
+client_start_message = f"Welcome to iiarsee {username}. Press [Ctrl-Q] to quit.\n Commands: /read_channel /read_client /msg_channel /msg_client /join_channel /leave_channel"
 client_main_menu = \
     "What do you want to do? \n" \
     "(r)ead messages from channel\n" \
@@ -85,7 +85,7 @@ class ClientSession():
             raise RuntimeError("The given username was already in use")
 
     async def client_server(self, reader, writer):
-        data = await reader.read(100)
+        data = await reader.read(1000)
         message = data.decode()
         addr = writer.get_extra_info('peername')
         addr = addr[0] + ':' + str(addr[1])
@@ -142,7 +142,7 @@ class ClientSession():
             message = json.dumps(message)
         writer.write(message.encode())
 
-        data = await reader.read(100)
+        data = await reader.read(1000)
         self.logger.debug(f"tcp_client(): received response: {data}")
 
         self.logger.debug("tcp_client(): closing client")
@@ -359,7 +359,7 @@ if __name__ == "__main__":
     logger = logging.getLogger("iiarsee_client")
     logger.setLevel("INFO")
     # create file handler which logs even debug messages
-    fh = logging.FileHandler("iiarsee_client.log")
+    fh = logging.FileHandler(f"iiarsee_client_{username}.log")
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     # ch = logging.StreamHandler()
