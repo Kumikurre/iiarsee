@@ -185,7 +185,7 @@ class Server():
         for participant in channel_participants:
             recipient = self.dataOperations.find_client(participant)
             if participant != 1:
-                asyncio.ensure_future(self._send_to_single_client(loop, recipient["address"], msg))
+                asyncio.ensure_future(self._send_to_single_client(loop, recipient, msg))
         return 0
 
     def run(self):
