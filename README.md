@@ -20,7 +20,7 @@ pip install -r ./client/requirements.txt
 Run the server and client (in a different terminal or machine):
 ```
 python ./server/server.py
-python ./client/client.py --address <server_address> --port <server_port>
+python ./client/client.py --address <server_address> --port <server_port> --client_port <client_port>
 ```
 
 ## Docs
