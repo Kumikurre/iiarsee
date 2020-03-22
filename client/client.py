@@ -71,7 +71,9 @@ class ClientSession():
         # loop.close()
         # init the client side server for receiving new messages and talking to other clients
         client_server = asyncio.start_server(self.client_server, "0.0.0.0", self.client_port, loop=self.loop)
-        self.server = self.loop.run_until_complete(client_server)
+        # self.server = self.loop.run_until_complete(client_server)
+        # self.loop.create_task(client_server)
+        asyncio.ensure_future(client_server)
 
         # start the server and run it in the background (we have no controls over it basically)
         # asyncio.create_task(self.client_server())
@@ -122,10 +124,9 @@ class ClientSession():
                 self.logger.info(f'client_server(): received a message {message} from client {client_name}')
                 self.clients.setdefault(client_name, {"messages": []})
                 self.clients[client_name]['messages'].append(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': <' + client_name + '>: ' + message)
-                self.logger.debug(f'!!!client_server(): channel messages after assignment: {self.channels[channel_name]["messages"]}')
+                self.logger.debug(f'!!!client_server(): channel messages after assignment: {self.clients[client_name]["messages"]}')
 
-
-
+        answer = {'status': 0}  # rok rok
         writer.write(json.dumps(answer).encode('utf-8'))
         await writer.drain()
 
@@ -152,26 +153,28 @@ class ClientSession():
     def read_channel_messages(self, channel_name, rows=5):
         """Prints n last messages for given channel"""
         if channel_name in self.channels:
-            new_text = ""
+            new_text = "\n"
             for row in self.channels[channel_name]['messages'][-rows:]:
                 # "add to the top"
                 new_text = str(row) + "\n" + new_text
+            new_text = chat_field.text + new_text
             chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
         else:
-            new_text = "Channel not found\n"
+            new_text = chat_field.text + "\nChannel not found\n"
             chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
 
 
     def read_client_messages(self, client_name, rows=5):
         """Prints n last messages for given client"""
         if client_name in self.clients:
-            new_text = ""
+            new_text = "\n"
             for row in self.clients[client_name]['messages'][-rows:]:
                 # "add to the top"
                 new_text = str(row) + "\n" + new_text
+            new_text = chat_field.text + new_text
             chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
         else:
-            new_text = "Client not found\n"
+            new_text = chat_field.text + "\nClient not found\n"
             chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
 
     def message_channel(self, channel_name, msg):
@@ -198,13 +201,17 @@ class ClientSession():
                    "message": msg,
                    "client_port": self.client_port}
         client_address, client_port = client_address.split(":")
-        data = self.loop.run_until_complete(self.tcp_client(client_address, client_port, message, self.loop))  # We probably should not hardcode the client port but instead get it from the server? dunno...
-        new_text = chat_field.text + "\n" + data.decode()
+        response = self.loop.run_until_complete(self.tcp_client(client_address, client_port, message, self.loop))  # We probably should not hardcode the client port but instead get it from the server? dunno...
+        new_text = chat_field.text + "\n" + response.decode()
         chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
         #client_address = self._find_client_address()
         if response["status"]:
             # failed to send the message
             return "Failed to send the message."
+        # append the message to messages on our side
+        self.clients.setdefault(client_name, {"messages": []})
+        self.clients[client_name]['messages'].append(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': <' + client_name + '>: ' + message)
+
 
     def receive_message_server(self):
         """Handle receiving of message from server"""
@@ -304,7 +311,8 @@ def handle_input(buff):
         else:
             logger.error("invalid operation: %s", operation)
             new_text = "Invalid operation\n"
-
+        if not new_text:
+            new_text = chat_field.text + "\ninvalid return text from operaration " + operation
         chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
 
     except Exception as e:
