@@ -5,6 +5,9 @@ import logging
 import socket
 import prompt_toolkit
 import sys
+import nest_asyncio
+
+nest_asyncio.apply()
 
 #### CONSTANTS:
 client_session = None
@@ -44,14 +47,14 @@ class ClientSession():
         self.logger = logger
         self.client_name = client_name
         self.channels = {}
-        self.server_addr = args.address
-        self.server_port = args.port
-        self.client_port = args.client_port
         # channels = {
         #   "channel1": [{timestamp: <timestamp>, client_name: <client_name>, message: <informative message>"}],
         #   "channel2": []
         # }
         # 
+        self.server_addr = args.address
+        self.server_port = args.port
+        self.client_port = args.client_port
         self.clients = {}
         # clients {
         #   "client1": {
@@ -60,7 +63,7 @@ class ClientSession():
         #       "state": "INACTIVE"
         #   }
         # }
-        self.logger.debug("ClientSession.__init__(): initializing client %s with arguments: %s", self.client_name, args)
+        self.logger.debug(f"ClientSession.__init__(): initializing client {self.client_name} with arguments: {args}")
         # init the event loop for whole client to server
         self.loop = asyncio.get_event_loop()
         # data = self.loop.run_until_complete(self.tcp_client("127.0.0.1", 8666, message, self.loop))
@@ -68,21 +71,20 @@ class ClientSession():
         message = {"operation":"register_client",
                    "client_name": self.client_name}
         # register the client to server, hardcoded defaults
-        data = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
-        self.logger.debug("ClientSession.__init__(): registered client to server, received response: %s", data)
+        register_return = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
+        self.logger.debug(f"ClientSession.__init__(): registered client to server, received response: {register_return}")
 
     # @staticmethod
     async def tcp_client(self, address, port, message, loop):
         reader, writer = await asyncio.open_connection(address, port, loop=loop)
 
-        self.logger.debug("tcp_client(): sending message %s to address %s on port %s",
-                          message, address, port)
+        self.logger.debug(f"tcp_client(): sending message {message} to address {address} on port {port}")
         if type(message) is not str:
             message = json.dumps(message)
         writer.write(message.encode())
 
         data = await reader.read(100)
-        self.logger.debug("tcp_client(): received response: %s", data)
+        self.logger.debug(f"tcp_client(): received response: {data}")
 
         self.logger.debug("tcp_client(): closing client")
         writer.close()
@@ -160,7 +162,7 @@ class ClientSession():
         # last
         self.loop.close()
         self.logger.debug("ClientSession.quit_client(): quitting client")
-        app.exit()
+        event.app.exit()
         # send also quit message to whole client_address_book -> client removed from client_address_book
 
     def _find_client_address(self, client_name):
@@ -207,11 +209,7 @@ def handle_input(buff):
         if len(user_input) > 2:
             message = " ".join(map(str, user_input[2:]))
 
-        # if operation == "/register": # tehhää tämä heti kun on saatu user_name
-        #     ClientSession().register_client(username)
-        if operation == "/read_msgs":
-            client_session.read_messages(opt_parameter)
-        elif operation == "/msg_channel":
+        if operation == "/msg_channel":
             client_session.message_channel(opt_parameter, message)
         elif operation == "/msg_client":
             client_session.message_client(opt_parameter, message)
@@ -226,7 +224,7 @@ def handle_input(buff):
             return False
 
     except Exception as e:
-        logger.debug("failed to parse user input %s with error", user_input, e)
+        logger.debug(f"failed to parse user input {user_input} with error {e}")
 
 # Create the layout
 chat_field = prompt_toolkit.widgets.TextArea()
@@ -255,7 +253,7 @@ root_container = prompt_toolkit.layout.containers.HSplit([
 
 input_field.accept_handler = handle_input
 
-# Add keybinds to make user"s life easier
+# Add keybinds to make user's life easier
 # Ctrl+C and Ctrl+Q: exit application
 kb = prompt_toolkit.key_binding.KeyBindings()
 @kb.add("c-c", eager=True)
