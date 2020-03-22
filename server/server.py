@@ -13,7 +13,8 @@ op_codes = {
     "remove_client": "remove_client",
     "join_channel": "join_channel",
     "leave_channel": "leave_channel",
-    "message_channel": "message_channel"
+    "message_channel": "message_channel",
+    "channel_participants": "find_channel_participants"
 }
 
 
@@ -97,12 +98,27 @@ class Server():
         self.config = config
         self.dataOperations = DataHandler(self.logger)
 
+    def _send_to_single_client(self, receiving_address_, msg):
+        awa
+
+    def _broadcast_to_channel(self, channel_participants, sender_name, channel_name, message):
+        msg = {
+            "sender": sender_name,
+            "channel_name": channel_name,
+            "message": message
+        }
+        loop = asyncio.get_event_loop()
+        for participant in channel_participants:
+            self._send_to_single_client(self.dataOperations.find_client(participant), msg)
+        return 0
+
     def _execute_operation(self, 
                             op_code, 
                             client_name="", 
                             client_ip="", 
                             search_name="",
-                            channel_name=""):
+                            channel_name="",
+                            message=""):
         """
         This method handles the data structural operations.
         Takes the client and channel information as arguments.
@@ -149,9 +165,18 @@ class Server():
                 answer['status'] = 1
                 answer['statusmessage'] = str(e)
 
+        elif op_code == op_codes["channel_participants"]:
+            try:
+                recipients = self.dataOperations.find_channel_participants(channel_name)
+                answer['participants'] = recipients
+            except Exception as e:
+                answer['status'] = 1
+                answer['statusmessage'] = str(e)
+
         elif op_code == op_codes["message_channel"]:
             try:
                 recipients = self.dataOperations.find_channel_participants(channel_name)
+                self._broadcast_to_channel(recipients, client_name, channel_name, message)
                 answer['participants'] = recipients
             except Exception as e:
                 answer['status'] = 1
@@ -188,9 +213,12 @@ class Server():
                 # Call the correct method with data parsed from JSON
                 operation = parsed_data.get('operation')
                 client_name = parsed_data.get('client_name')
+                # TODO Enable this check when client sends the port it uses
+                # client_address = addr.split(":")[0] + parsed_data.get('client_port')
                 search_name = parsed_data.get('search_name')
                 channel_name = parsed_data.get('channel_name')
-                answer = self._execute_operation(operation, client_name=client_name, client_ip=addr, search_name=search_name, channel_name=channel_name)
+                message = parsed_data.get('message')
+                answer = self._execute_operation(operation, client_name=client_name, client_ip=addr, search_name=search_name, message=message, channel_name=channel_name)
                 self.logger.info(f'Sending to {addr}: {answer}')
 
             writer.write(json.dumps(answer).encode('utf-8'))
