@@ -162,6 +162,7 @@ class ClientSession():
         else:
             new_text = chat_field.text + "\nChannel not found\n"
             chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
+        return "End of messages"
 
 
     def read_client_messages(self, client_name, rows=5):
@@ -176,6 +177,7 @@ class ClientSession():
         else:
             new_text = chat_field.text + "\nClient not found\n"
             chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
+        return "End of messages"
 
     def message_channel(self, channel_name, msg):
         """Sends a message to a given channel on the server"""
@@ -190,6 +192,7 @@ class ClientSession():
         if response["status"]:
             # failed to send the message
             return "Failed to send the message"
+        return "Message sent"
 
     def message_client(self, client_name, msg): # this needs  fixing
         """Sends a message to a given client"""
@@ -202,15 +205,16 @@ class ClientSession():
                    "client_port": self.client_port}
         client_address, client_port = client_address.split(":")
         response = self.loop.run_until_complete(self.tcp_client(client_address, client_port, message, self.loop))  # We probably should not hardcode the client port but instead get it from the server? dunno...
-        new_text = chat_field.text + "\n" + response.decode()
-        chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
+        # new_text = chat_field.text + "\n" + response.decode()
+        # chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
         #client_address = self._find_client_address()
         if response["status"]:
             # failed to send the message
             return "Failed to send the message."
         # append the message to messages on our side
         self.clients.setdefault(client_name, {"messages": []})
-        self.clients[client_name]['messages'].append(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': <' + client_name + '>: ' + message)
+        self.clients[client_name]['messages'].append(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': <' + self.client_name + '>: ' + message)
+        return "Message sent"
 
 
     def receive_message_server(self):
@@ -238,6 +242,7 @@ class ClientSession():
         if response["status"]:
             # failed to send the message
             return "Failed to join the channel"
+        return "joined channel " + channel_name
 
 
     def leave_channel(self, channel_name):
@@ -252,6 +257,7 @@ class ClientSession():
         if response["status"]:
             # failed to send the message
             return "Failed to leave the channel"
+        return "left channel " + channel_name
 
     def quit_client(self, app):
         """Sends a "remove_client" message to the server and other clients in the clients object"""
@@ -312,7 +318,8 @@ def handle_input(buff):
             logger.error("invalid operation: %s", operation)
             new_text = "Invalid operation\n"
         if not new_text:
-            new_text = chat_field.text + "\ninvalid return text from operaration " + operation
+            new_text = "invalid return text from operaration " + operation
+        new_text = chat_field.text + "\n" + new_text
         chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
 
     except Exception as e:
