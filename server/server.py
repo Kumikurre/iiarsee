@@ -159,25 +159,20 @@ class Server():
                 answer['status'] = 1
                 answer['statusmessage'] = str(e)
 
-        # elif op_code == op_codes["message_channel"]:
-        #     try:
-        #         recipients = self.dataOperations.find_channel_participants(channel_name)
-        #         self._broadcast_to_channel
-        #         answer['participants'] = recipients
-        #     except Exception as e:
-        #         answer['status'] = 1
-        #         answer['statusmessage'] = str(e)
-
         else:
             answer['status'] = 1
             answer['statusmessage'] = "unkown operation"
         
         return answer
 
-    async def _send_to_single_client(self, receiving_address, msg):
+    async def _send_to_single_client(self, loop, receiving_address, msg):
+        addr, port = receiving_address.split(":")
+        reader, writer = await asyncio.open_connection(addr, port, loop=loop)
+        writer.write(json.dumps(msg).encode('utf-8'))
+        await writer.drain()
         print("this stuff would be sent: ", receiving_address, msg)
 
-    def _broadcast_to_channel(self, channel_participants, sender_name, channel_name, message):
+    def _broadcast_to_channel(self, loop, channel_participants, sender_name, channel_name, message):
         msg = {
             "sender": sender_name,
             "channel_name": channel_name,
@@ -186,7 +181,7 @@ class Server():
         for participant in channel_participants:
             recipient = self.dataOperations.find_client(participant)
             if participant != 1:
-                asyncio.ensure_future(self._send_to_single_client(recipient["address"], msg))
+                asyncio.ensure_future(self._send_to_single_client(loop, recipient["address"], msg))
         return 0
 
     def run(self):
@@ -210,8 +205,8 @@ class Server():
                     }
                 self.logger.info(f'JSON parsing failed for received message')
 
+            # Call the correct method with data parsed from JSON
             if parsed_data:
-                # Call the correct method with data parsed from JSON
                 operation = parsed_data.get('operation')
                 client_name = parsed_data.get('client_name')
                 # TODO Enable this line below when client sends the port it uses
@@ -221,7 +216,7 @@ class Server():
                 message = parsed_data.get('message')
                 if operation == op_codes["message_channel"]:
                     recipients = self._execute_operation(op_codes["channel_participants"], channel_name=channel_name)
-                    statuscode = self._broadcast_to_channel(recipients["participants"], client_name, channel_name, message)
+                    statuscode = self._broadcast_to_channel(loop, recipients["participants"], client_name, channel_name, message)
                     answer = {
                         'status': statuscode,
                         }
