@@ -214,7 +214,7 @@ class Server():
                 operation = parsed_data.get('operation')
                 client_name = parsed_data.get('client_name')
                 # TODO Enable this line below when client sends the port it uses
-                # client_address = addr.split(":")[0] + parsed_data.get('client_port')
+                client_address = addr.split(":")[0] + ":" + str(parsed_data.get('client_port'))
                 search_name = parsed_data.get('search_name')
                 channel_name = parsed_data.get('channel_name')
                 message = parsed_data.get('message')
@@ -225,7 +225,7 @@ class Server():
                         'status': statuscode,
                         }
                 else:
-                    answer = self._execute_operation(operation, client_name=client_name, client_ip=addr, search_name=search_name, message=message, channel_name=channel_name)
+                    answer = self._execute_operation(operation, client_name=client_name, client_ip=client_address, search_name=search_name, message=message, channel_name=channel_name)
                     self.logger.info(f'Sending to {addr}: {answer}')
 
             writer.write(json.dumps(answer).encode('utf-8'))
