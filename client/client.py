@@ -197,7 +197,8 @@ class ClientSession():
                    "client_name": self.client_name,
                    "message": msg,
                    "client_port": self.client_port}
-        data = self.loop.run_until_complete(self.tcp_client(client_address, self.client_port, message, self.loop))  # We probably should not hardcode the client port but instead get it from the server? dunno...
+        client_address, client_port = client_address.split(":")
+        data = self.loop.run_until_complete(self.tcp_client(client_address, client_port, message, self.loop))  # We probably should not hardcode the client port but instead get it from the server? dunno...
         new_text = chat_field.text + "\n" + data.decode()
         chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
         #client_address = self._find_client_address()
@@ -265,7 +266,7 @@ class ClientSession():
         """Find a given client"s true network address from the server"""
         self.logger.info("ClientSession.join_channel(): finding address for client %s", client_name)
         message = {"operation":"find_client",
-                   "client_name": client_name,
+                   "search_name": client_name,
                    "client_port": self.client_port}
         response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.info("ClientSession.join_channel(): found address for client %s, response: %s", client_name, response)
