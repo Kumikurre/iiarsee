@@ -90,6 +90,8 @@ class DataHandler():
             return 1
 
     def __check_internal_data_structure__(self):
+        self.logger.debug(f'clients: {self.clients}')
+        self.logger.debug(f'channels: {self.channels}')
         print('clients:', self.clients)
         print('channels:', self.channels)
 
@@ -174,7 +176,7 @@ class Server():
         reader, writer = await asyncio.open_connection(addr, port, loop=loop)
         writer.write(json.dumps(msg).encode('utf-8'))
         await writer.drain()
-        print("this stuff would be sent: ", receiving_address, msg)
+        self.logger.info(f'Sending to {receiving_address}: {msg}')
 
     def _broadcast_to_channel(self, loop, channel_participants, sender_name, channel_name, message):
         msg = {
@@ -255,22 +257,24 @@ class Server():
 
 
 if __name__ == '__main__':
+    # Configs for the server. 
+    # TODO This should be moved to external file
+    config = {
+        "PORT": 8666,
+        "BUFFER_SIZE": 1024,
+        "HOSTNAME": '0.0.0.0',
+        "debug_mode": logging.DEBUG
+    }
+    
     # Setting up logger
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(config["debug_mode"])
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
-    # Configs for the server. 
-    # TODO This should be moved to external file
-    config = {
-        "PORT": 8666,
-        "BUFFER_SIZE": 1024,
-        "HOSTNAME": '0.0.0.0'
-    }
     
     # Start the actual server
     logger.info('Starting server...')
