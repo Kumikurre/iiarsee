@@ -56,7 +56,7 @@ class DataHandler():
     def find_client(self, search_name):
         self.logger.info(f'Finding client {search_name}')
         if search_name in self.clients:
-            return self.clients[search_name]
+            return self.clients[search_name]['address']
         else:
             return 1
 
