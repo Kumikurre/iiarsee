@@ -95,6 +95,8 @@ class ClientSession():
 
         try:
             parsed_data = json.loads(message)
+            answer = {'status': 0}  # rok rok
+
         except Exception as e:
             parsed_data = None
             answer = {
@@ -126,7 +128,6 @@ class ClientSession():
                 self.clients[client_name]['messages'].append(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': <' + client_name + '>: ' + message)
                 self.logger.debug(f'!!!client_server(): channel messages after assignment: {self.clients[client_name]["messages"]}')
 
-        answer = {'status': 0}  # rok rok
         writer.write(json.dumps(answer).encode('utf-8'))
         await writer.drain()
 
@@ -213,7 +214,7 @@ class ClientSession():
             return "Failed to send the message."
         # append the message to messages on our side
         self.clients.setdefault(client_name, {"messages": []})
-        self.clients[client_name]['messages'].append(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': <' + self.client_name + '>: ' + message)
+        self.clients[client_name]['messages'].append(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': <' + self.client_name + '>: ' + msg)
         return "Message sent"
 
 
