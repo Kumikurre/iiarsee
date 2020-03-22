@@ -72,6 +72,7 @@ class ClientSession():
         # init the client side server for receiving new messages and talking to other clients
         client_server = asyncio.start_server(self.client_server, "0.0.0.0", self.client_port, loop=self.loop)
         self.server = self.loop.run_until_complete(client_server)
+
         # start the server and run it in the background (we have no controls over it basically)
         # asyncio.create_task(self.client_server())
         message = {"operation":"register_client",
@@ -80,6 +81,8 @@ class ClientSession():
         # register the client to server, hardcoded defaults
         register_return = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.debug(f"ClientSession.__init__(): registered client to server, received response: {register_return}")
+        if register_return["status"]:
+            raise RuntimeError("The given username was already in use")
 
     async def client_server(self, reader, writer):
         data = await reader.read(100)
@@ -181,8 +184,11 @@ class ClientSession():
                    "client_port": self.client_port}
         response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.info("ClientSession.message_channel(): sent message to channel, received response: %s", response)
+        if response["status"]:
+            # failed to send the message
+            return "Failed to send the message"
 
-    def message_client(self, client_name, msg):
+    def message_client(self, client_name, msg): # this needs  fixing
         """Sends a message to a given client"""
         self.logger.info("ClientSession.message_client(): sending message to client %s, resolving address first", client_name)
         client_address = self._find_client_address(client_name)
@@ -195,6 +201,9 @@ class ClientSession():
         new_text = chat_field.text + "\n" + data.decode()
         chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
         #client_address = self._find_client_address()
+        if response["status"]:
+            # failed to send the message
+            return "Failed to send the message."
 
     def receive_message_server(self):
         """Handle receiving of message from server"""
@@ -218,6 +227,9 @@ class ClientSession():
                    "client_port": self.client_port}
         response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.info("ClientSession.join_channel(): joined channel %s, received response: %s", channel_name, response)
+        if response["status"]:
+            # failed to send the message
+            return "Failed to join the channel"
 
 
     def leave_channel(self, channel_name):
@@ -229,6 +241,9 @@ class ClientSession():
                    "client_port": self.client_port}
         response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.info("ClientSession.join_channel(): leaved channel %s, received response: %s", channel_name, response)
+        if response["status"]:
+            # failed to send the message
+            return "Failed to leave the channel"
 
     def quit_client(self, app):
         """Sends a "remove_client" message to the server and other clients in the clients object"""
@@ -254,6 +269,7 @@ class ClientSession():
                    "client_port": self.client_port}
         response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.info("ClientSession.join_channel(): found address for client %s, response: %s", client_name, response)
+        # what if the client is not found?
         return response["address"]
 
 
@@ -271,22 +287,24 @@ def handle_input(buff):
             message = " ".join(map(str, user_input[2:]))
 
         if operation == "/read_channel":
-            client_session.read_channel_messages(opt_parameter)
+            new_text = client_session.read_channel_messages(opt_parameter)
         elif operation == "/read_client":
-            client_session.read_client_messages(opt_parameter)
+            new_text = client_session.read_client_messages(opt_parameter)
         elif operation == "/msg_channel":
-            client_session.message_channel(opt_parameter, message)
+            new_text = client_session.message_channel(opt_parameter, message)
         elif operation == "/msg_client":
-            client_session.message_client(opt_parameter, message)
+            new_text = client_session.message_client(opt_parameter, message)
         elif operation == "/join_channel":
-            client_session.join_channel(opt_parameter)
+            new_text = client_session.join_channel(opt_parameter)
         elif operation == "/leave_channel":
-            client_session.leave_channel(opt_parameter)
+            new_text = client_session.leave_channel(opt_parameter)
         elif operation == "/quit":
             client_session.quit_client(application)
         else:
             logger.error("invalid operation: %s", operation)
-            return False
+            new_text = "Invalid operation\n"
+
+        chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
 
     except Exception as e:
         logger.debug(f"failed to parse user input {user_input} with error {e}")
