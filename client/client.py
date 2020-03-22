@@ -70,7 +70,8 @@ class ClientSession():
         # data = self.loop.run_until_complete(self.tcp_client("127.0.0.1", 8666, message, self.loop))
         # loop.close()
         # init the client side server for receiving new messages and talking to other clients
-        client_server = asyncio.start_server(self.client_server, "0.0.0.0", self.client_port)
+        client_server = asyncio.start_server(self.client_server, "0.0.0.0", self.client_port, loop=self.loop)
+        self.server = self.loop.run_until_complete(client_server)
         # start the server and run it in the background (we have no controls over it basically)
         # asyncio.create_task(self.client_server())
         message = {"operation":"register_client",
@@ -148,7 +149,8 @@ class ClientSession():
         message = {"operation":"message_channel",
                    "client_name": self.client_name,
                    "channel_name": channel_name,
-                   "message": msg}
+                   "message": msg,
+                   "client_port": self.client_port}
         response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.info("ClientSession.message_channel(): sent message to channel, received response: %s", response)
 
@@ -159,7 +161,8 @@ class ClientSession():
         self.logger.info("ClientSession.message_channel(): sending message %s to client %s in addr %s", msg, client_name, client_address)
         message = {"operation":"message_client",
                    "client_name": self.client_name,
-                   "message": msg}
+                   "message": msg,
+                   "client_port": self.client_port}
         data = self.loop.run_until_complete(self.tcp_client(client_address, self.client_port, message, self.loop))  # We probably should not hardcode the client port but instead get it from the server? dunno...
         new_text = chat_field.text + "\n" + data.decode()
         chat_field.buffer.document = prompt_toolkit.document.Document(text=new_text, cursor_position=len(new_text))
@@ -183,7 +186,8 @@ class ClientSession():
         self.logger.info("ClientSession.join_channel(): joining channel %s on the server", channel_name)
         message = {"operation":"join_channel",
                    "client_name": self.client_name,
-                   "channel_name": channel_name}
+                   "channel_name": channel_name,
+                   "client_port": self.client_port}
         response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.info("ClientSession.join_channel(): joined channel %s, received response: %s", channel_name, response)
 
@@ -193,55 +197,38 @@ class ClientSession():
         self.logger.info("ClientSession.join_channel(): leaving channel %s on the server", channel_name)
         message = {"operation":"leave_channel",
                    "client_name": self.client_name,
-                   "channel_name": channel_name}
+                   "channel_name": channel_name,
+                   "client_port": self.client_port}
         response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.info("ClientSession.join_channel(): leaved channel %s, received response: %s", channel_name, response)
 
     def quit_client(self, app):
         """Sends a "remove_client" message to the server and other clients in the clients object"""
         message = {"operation": "remove_client",
-                   "client_name": self.client_name}
+                   "client_name": self.client_name,
+                   "client_port": self.client_port}
         # register the client to server, hardcoded defaults
         data = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.debug("ClientSession.quit_client(): sent remove_client message to server, received response: %s", data)
 
         # last
+        self.loop.stop()
         self.loop.close()
         self.logger.debug("ClientSession.quit_client(): quitting client")
-        event.app.exit()
+        app.exit()
         # send also quit message to whole client_address_book -> client removed from client_address_book
 
     def _find_client_address(self, client_name):
         """Find a given client"s true network address from the server"""
         self.logger.info("ClientSession.join_channel(): finding address for client %s", client_name)
         message = {"operation":"find_client",
-                   "client_name": client_name}
+                   "client_name": client_name,
+                   "client_port": self.client_port}
         response = self.loop.run_until_complete(self.tcp_client(self.server_addr, self.server_port, message, self.loop))
         self.logger.info("ClientSession.join_channel(): found address for client %s, response: %s", client_name, response)
         return response["address"]
 
 
-
-    # have internal state of the session here
-    # e.g. the channel in which the client is, do we want to have client actively in one channel?
-    # or should we just have the state of each channel displayed to the client at all times with no "active" channel
-    # simply printing 
-
-    # we need a separate process to handle the incoming messages from the server and other clients
-    # that writes the messages to files and notifies the actual interactive client of new messages in a channel
-
-    # should we create the clientS server when we call the login to the actual server.
-
-
-def receive(self, parameter_list):
-    raise NotImplementedError
-
-# Takes the user input from input_field and begins operations based on it
-# TODO: parse user input to <operation> [<kelle/mille kanavalle> <teksti>]
-#    esim. /register latsis
-#          /q
-#          /msg sakkoja mitäpä ukko mee töihin
-#          /msg latsis meeppä poka ite :d
 def handle_input(buff):
     """Handler for accepting user input"""
     new_text = chat_field.text + "\n" + input_field.text
